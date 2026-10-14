@@ -1,0 +1,47 @@
+oxford_pet_multitask/
+│
+├── configs/
+│   ├── __init__.py
+│   └── config.py                        # ไฟล์รวมศูนย์การตั้งค่า Hyperparameters, Path, และสัดส่วนน้ำหนัก Loss (λ)
+│
+├── data/
+│   ├── __init__.py
+│   ├── class_mappings.py                # รายชื่อ 37 สายพันธุ์ และฟังก์ชันแปลง breed_id เป็น species_id (Cat=0, Dog=1)
+│   └── dataset.py                       # โหลดข้อมูล, แบ่ง Stratified Train/Val/Test (กัน Data Leakage) และทำ Synchronized Augmentation
+│
+├── models/
+│   ├── __init__.py
+│   └── multitask_model.py               # สถาปัตยกรรม Multi-task ResNet-50 (Shared Backbone + U-Net Decoder + 2 Cls Heads)
+│
+├── utils/
+│   ├── __init__.py
+│   ├── losses.py                        # ฟังก์ชันสูญเสียร่วม MultiTaskLoss (CE + Dice Loss + Label Smoothing)
+│   ├── metrics.py                       # คำนวณตัวชี้วัดแยกตามงาน (mIoU, Mean Dice, Macro F1, Precision, Recall, Accuracy)
+│   └── visualization.py                 # ฟังก์ชันวาดภาพเปรียบเทียบ Mask และพล็อตกราฟ Confusion Matrix
+│
+├── data_cache/                          # [ถูกเพิกเฉยใน .gitignore] โฟลเดอร์เก็บชุดข้อมูลต้นฉบับ
+│   └── oxford-iiit-pet/                 # โฟลเดอร์มาตรฐานที่ torchvision บังคับตรวจสอบ
+│       ├── images/                      # ภาพถ่ายสัตว์เลี้ยงทั้งหมด 7,349 ภาพ (.jpg)
+│       └── annotations/                 # ป้ายกำกับ (list.txt, trainval.txt, test.txt, xmls/ และ trimaps/)
+│
+├── checkpoints/                         # [ถูกเพิกเฉยใน .gitignore] โฟลเดอร์เก็บไฟล์น้ำหนักโมเดลที่เทรนเสร็จแล้ว
+│   ├── best_model_resnet50.pth                  # รูปแบบหลัก (Balanced Multi-task: λ_seg=1.0, λ_breed=1.0)
+│   ├── best_model_resnet50_seg2.0_cls0.5.pth    # รูปแบบเปรียบเทียบที่ 1 (Seg-focused Multi-task) [ถ้าเทรนเก็บผลเพิ่ม]
+│   └── best_model_resnet50_seg0.5_cls2.0.pth    # รูปแบบเปรียบเทียบที่ 2 (Cls-focused Multi-task) [ถ้าเทรนเก็บผลเพิ่ม]
+│
+├── outputs/                             # [ถูกเพิกเฉยใน .gitignore] โฟลเดอร์เก็บกราฟและรูปภาพสำหรับนำไปทำสไลด์
+│   ├── test_seg_example_1..5.png        # ภาพผลลัพธ์ Segmentation จากการรัน evaluate.py
+│   ├── breed_confusion_matrix.png       # Heatmap 37 สายพันธุ์จาก evaluate.py
+│   ├── species_confusion_matrix.png     # Heatmap Cat vs Dog จาก evaluate.py
+│   ├── slide_dataset_samples.png        # ภาพตัวอย่าง Dataset + Ground Truth Trimap (300 DPI จาก Notebook)
+│   ├── slide_learning_curves.png        # กราฟ Loss และ mIoU/F1 Progression 30 Epochs (300 DPI จาก Notebook)
+│   ├── slide_confusion_matrices.png     # กราฟ Confusion Matrix คู่ขนาน (300 DPI จาก Notebook)
+│   └── slide_good_vs_error_cases.png    # ภาพวิเคราะห์ Good Cases vs Error Cases (300 DPI จาก Notebook)
+│
+├── train.py                             # สคริปต์ฝึกสอนโมเดล (ปรับจูนด้วย bfloat16, AdamW, CosineAnnealingLR, cuDNN benchmark)
+├── evaluate.py                          # สคริปต์ประเมินผลโมเดลบน Unseen Test Set (3,669 ภาพ) พร้อมรองรับ weights_only=False
+├── inference.py                         # สคริปต์ทดสอบทำนายผลจากไฟล์รูปภาพเดี่ยวภายนอก (แสดงทั้ง Mask และ % ความมั่นใจ)
+├── project_overview_and_presentation_guide.ipynb  # สมุดบันทึกสรุปภาพรวมโปรเจกต์ วิเคราะห์ผล และไกด์ไลน์ทำสไลด์ 10 แผ่น
+├── requirements.txt                     # รายการไลบรารีที่จำเป็นสำหรับการติดตั้งสภาพแวดล้อม
+├── .gitignore                           # ไฟล์คัดกรองไม่ให้ Dataset, Checkpoints (.pth), และ venv ถูกอัปโหลดขึ้น Git
+└── README.md                            # คู่มืออธิบายวิธีติดตั้ง การตั้งค่า และการรันโค้ด (ตามสิ่งที่ต้องส่งของอาจารย์)
