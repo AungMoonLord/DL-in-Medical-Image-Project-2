@@ -36,7 +36,7 @@
 
 | งาน | รายละเอียด |
 |---|---|
-| 🖼️ **Segmentation** | แยกส่วนของสัตว์เลี้ยงออกจากพื้นหลัง (Trimap) |
+| 🖼️ **Segmentation** | แยกสัตว์เลี้ยงออกจากพื้นหลังระดับพิกเซล (Trimap 3 คลาส: Background / Pet / Boundary) |
 | 🐶 **Breed Classification** | จำแนก **37 สายพันธุ์** |
 | 🐱 **Species Classification** | จำแนก **แมว (Cat = 0)** หรือ **สุนัข (Dog = 1)** |
 
@@ -44,23 +44,35 @@
 
 - 🧩 **Shared Backbone** — ใช้ ResNet-50 ร่วมกันทุกงาน ลดความซ้ำซ้อนของพารามิเตอร์
 - ⚖️ **ปรับน้ำหนัก Loss (λ) ได้** — เปรียบเทียบ 3 รูปแบบ: Balanced / Seg-focused / Cls-focused
-- 🔒 **Stratified Train/Val/Test Split** — ป้องกัน Data Leakage
+- 🔒 **แยก Test Set ตาม Official Split + Stratified Train/Val Split (80:20)** — ป้องกัน Data Leakage
 - 🔄 **Synchronized Augmentation** — ภาพและ Mask ถูกแปลงไปพร้อมกัน
 - ⚡ **Training ที่ปรับจูนแล้ว** — bfloat16, AdamW, CosineAnnealingLR, cuDNN benchmark
-- 📊 **ตัวชี้วัดครบถ้วน** — mIoU, Mean Dice, Macro F1, Precision, Recall, Accuracy
+- 📊 **ตัวชี้วัดครบถ้วน** — mIoU, Mean Dice, IoU รายคลาส, Precision, Recall, Macro F1, Accuracy, Confusion Matrix
 
 ---
 
 ## 🏗️ สถาปัตยกรรมโมเดล
 
 ```
-                        ┌─► U-Net Decoder ─────► Segmentation Mask
- Input Image ─► ResNet-50 (Shared Backbone)
-                        ├─► Classification Head ─► Breed  (37 classes)
-                        └─► Classification Head ─► Species (Cat / Dog)
+                        Skip Connections (C1, C2, C3, C4)
+                   ┌──────────────────────────────────────┐
+                   │                                      ▼
+ Input Image ─► ResNet-50 Encoder ── C5 ──────────► U-Net Decoder ─► Segmentation Mask
+  (224×224)      (Shared Backbone)  │                                 (3 classes × 224×224)
+                                    │
+                                    └─► Global Avg Pool + Dropout ─┬─► Breed Head   ─► 37 breeds
+                                                                   └─► Species Head ─► Cat / Dog
 ```
 
-**Loss Function:** `MultiTaskLoss` = Cross-Entropy + Dice Loss + Label Smoothing
+**Loss Function** (`utils/losses.py`):
+
+```
+L_total = λ_seg × (CrossEntropy + Dice)                  ← Segmentation
+        + λ_breed × CrossEntropy (Label Smoothing 0.05)  ← Breed
+        + λ_species × CrossEntropy                       ← Species
+```
+
+ค่าเริ่มต้น: λ_seg = 1.0, λ_breed = 1.0, λ_species = 0.5
 
 ---
 
@@ -80,7 +92,9 @@ oxford_pet_multitask/
 │
 ├── models/
 │   ├── __init__.py
-│   └── multitask_model.py        # Multi-task ResNet-50 (Shared Backbone + U-Net Decoder + 2 Cls Heads)
+│   ├── backbone.py               # Shared ResNet-50 Encoder (ส่งออก Feature C1–C5)
+│   ├── decoder.py                # U-Net Decoder พร้อม Skip Connections
+│   └── multitask_model.py        # รวม Backbone + Decoder + Breed/Species Heads
 │
 ├── utils/
 │   ├── __init__.py
@@ -149,10 +163,10 @@ pip install -r requirements.txt
 
 | หมวด | ไลบรารี |
 |---|---|
-| Deep Learning | `torch>=2.4.0`, `torchvision>=0.19.0` |
-| Data Augmentation & I/O | `opencv-python-headless>=4.8.0`, `albumentations>=1.4.0` |
-| Evaluation & Computation | `numpy>=1.26.0`, `scikit-learn>=1.4.0`, `scipy>=1.11.0` |
-| Visualization | `matplotlib>=3.8.0`, `seaborn>=0.13.0`, `tqdm>=4.66.0` |
+| Deep Learning & Augmentation | `torch>=2.4.0`, `torchvision>=0.19.0` (Augmentation ใช้ `torchvision.transforms`) |
+| Evaluation & Computation | `numpy>=1.26.0`, `scikit-learn>=1.4.0`, `pandas>=2.0.0` |
+| Visualization | `matplotlib>=3.8.0`, `seaborn>=0.13.0` |
+| Notebook | `jupyter` (สำหรับเปิด `project_overview_and_presentation_guide.ipynb`) |
 
 ---
 
