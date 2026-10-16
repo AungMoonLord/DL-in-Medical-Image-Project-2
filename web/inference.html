@@ -1,0 +1,207 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Pet Model Playground</title>
+<meta name="description" content="ทดลองโมเดล Multi-task บนเบราว์เซอร์ โหมด Inference ทีละภาพ และโหมด Evaluation ทั้งโฟลเดอร์ โดยไม่ต้องมีเซิร์ฟเวอร์โมเดล">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js"></script>
+</head>
+<body>
+
+<nav class="topnav" aria-label="เมนูหลัก"><div class="in">
+  <a class="brand" href="../index.html"><span class="tristrip" aria-hidden="true"><i style="background:var(--tri-bg)"></i><i style="background:var(--tri-pet)"></i><i style="background:var(--tri-edge)"></i></span>Pet Multi-task</a>
+  <ul>
+    <li><a href="../index.html">ภาพรวม</a></li>
+    <li><a href="data.html">ทำความรู้จักข้อมูล</a></li>
+    <li><a href="components.html">เจาะลึกองค์ประกอบ</a></li>
+    <li><a href="qa.html">คำถามที่คาดว่าจะเจอ</a></li>
+  </ul>
+  <div class="tools">
+    <button class="themebtn icon" type="button" aria-label="สลับโหมดมืดหรือสว่าง">☾</button>
+    <a class="cta" href="inference.html" aria-current="page">▶ ทดลองโมเดล</a>
+  </div>
+</div></nav>
+
+<div class="wrap">
+
+<nav class="toc" aria-label="สารบัญ">
+  <div class="lbl">ในหน้านี้</div>
+  <ol>
+    <li><a href="#model">โหลดโมเดล</a></li>
+    <li><a href="#app">Inference / Evaluation</a></li>
+    <li><a href="#guide">สิ่งที่ต้องมีและวิธีเปิด</a></li>
+    <li><a href="#notes">ข้อควรรู้</a></li>
+  </ol>
+</nav>
+
+<main class="tight">
+
+<header class="hero compact">
+  <div class="eyebrow">Playground · ONNX Runtime Web</div>
+  <h1>ทดลองโมเดล</h1>
+  <p class="lede">รันบนเบราว์เซอร์ทั้งหมด ภาพไม่ถูกส่งออกจากเครื่อง · <b>Inference</b> ทีละภาพ · <b>Evaluation</b> ทั้งโฟลเดอร์ ด้วยตัวชี้วัดแบบเดียวกับ <code>evaluate.py</code></p>
+</header>
+
+<!-- MODEL -->
+<section id="model">
+    <div class="card">
+    <div class="row">
+      <label class="btn ghost" for="modelFile">เลือกไฟล์โมเดล (.onnx)</label>
+      <input id="modelFile" type="file" accept=".onnx" hidden>
+      <button class="btn ghost" id="modelAuto" type="button">ลองโหลดจาก web/model/</button>
+      <label class="muted" for="backend" style="font-size:.9rem">Backend</label>
+      <select id="backend" style="font:inherit;font-size:.9rem;padding:6px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)">
+        <option value="auto">อัตโนมัติ (WebGPU → WASM)</option>
+        <option value="webgpu">WebGPU</option>
+        <option value="wasm">WASM (CPU)</option>
+      </select>
+    </div>
+    <div class="progress" id="modelProg" hidden><i></i></div>
+    <p class="muted" style="font-size:.88rem">ยังไม่มีไฟล์โมเดล? ดู <a href="#guide">สิ่งที่ต้องมีและวิธีเตรียม</a> ด้านล่าง (แปลงครั้งเดียวด้วย <code>python export_onnx.py</code>)</p>
+    <p class="status" id="modelStatus">ยังไม่ได้โหลดโมเดล</p>
+  </div>
+</section>
+
+<!-- APP -->
+<section id="app">
+  <div class="tabs" role="tablist">
+    <button role="tab" id="tabInf" aria-selected="true" aria-controls="panelInf">Inference · ทีละภาพ</button>
+    <button role="tab" id="tabEval" aria-selected="false" aria-controls="panelEval">Evaluation · ทั้งโฟลเดอร์</button>
+  </div>
+
+  <!-- Inference -->
+  <div class="panel" id="panelInf" role="tabpanel" aria-labelledby="tabInf">
+    <div class="drop" id="drop">
+      <b>ลากภาพมาวางที่นี่ หรือ</b>
+      <label class="btn" for="imgFile">เลือกภาพจากเครื่อง</label>
+      <input id="imgFile" type="file" accept="image/*" hidden>
+      <span class="muted" style="font-size:.9rem">รองรับ JPG, PNG, WebP · ภาพจะถูกย่อเป็น 224×224 ก่อนเข้าโมเดล เหมือนตอนเทรน</span>
+    </div>
+    <p class="status" id="infStatus"></p>
+
+    <div class="result" id="infResult" hidden>
+      <div class="viewer">
+        <canvas id="view" width="448" height="448" aria-label="ภาพที่เลือกพร้อมผล segmentation"></canvas>
+        <div class="ctrl">
+          <div class="seg" role="group" aria-label="รูปแบบการแสดงผล">
+            <button type="button" data-mode="overlay" aria-pressed="true">ซ้อน Mask</button>
+            <button type="button" data-mode="mask" aria-pressed="false">Mask อย่างเดียว</button>
+            <button type="button" data-mode="cutout" aria-pressed="false">ตัดพื้นหลัง</button>
+            <button type="button" data-mode="image" aria-pressed="false">ภาพต้นฉบับ</button>
+          </div>
+          <label>ความทึบ <input id="alpha" type="range" min="0" max="100" value="55"></label>
+        </div>
+        <div class="trikey">
+          <span><i style="background:var(--tri-bg)"></i>พื้นหลัง <b id="pctBg">–</b></span>
+          <span><i style="background:var(--tri-pet)"></i>ตัวสัตว์ <b id="pctPet">–</b></span>
+          <span><i style="background:var(--tri-edge)"></i>ขอบ <b id="pctEdge">–</b></span>
+        </div>
+      </div>
+      <div class="preds">
+        <div class="card"><span class="t">งานที่ 3 · หมาหรือแมว</span><div class="big-ans" id="spAns">–</div><div class="mbars" id="spBars"></div></div>
+        <div class="card"><span class="t">งานที่ 2 · สายพันธุ์ (5 อันดับแรก)</span><div class="big-ans" id="brAns">–</div><div class="mbars" id="brBars"></div></div>
+        <div class="analogy" id="consist" hidden></div>
+        <dl class="kv" id="infMeta"></dl>
+      </div>
+    </div>
+  </div>
+
+  <!-- Evaluation -->
+  <div class="panel" id="panelEval" role="tabpanel" aria-labelledby="tabEval" hidden>
+    <div class="howto">
+      <span class="t">เตรียมโฟลเดอร์อย่างไร</span>
+      <ul>
+        <li>เลือกโฟลเดอร์ <code>oxford-iiit-pet</code> ที่มี <code>images/</code> และ <code>annotations/trimaps/</code> (โครงสร้างเดียวกับที่ดาวน์โหลดมา)</li>
+        <li>ป้ายสายพันธุ์อ่านจาก<b>ชื่อไฟล์</b> เช่น <code>Bengal_12.jpg</code> → Bengal (แมว) ตามแบบของชุดข้อมูล</li>
+        <li>Mask เฉลยจับคู่ด้วยชื่อเดียวกัน <code>annotations/trimaps/Bengal_12.png</code> ถ้าไม่มี Mask จะคำนวณเฉพาะตัวชี้วัดการจำแนก</li>
+        <li>ถ้ามี <code>annotations/test.txt</code> จะเลือกเฉพาะภาพ test ทางการได้ (3,669 ภาพ) ผลจะใกล้กับตารางใน notebook</li>
+        <li>ใช้โฟลเดอร์ภาพของตัวเองได้ ขอให้ตั้งชื่อไฟล์แบบ <code>ชื่อสายพันธุ์_เลข.jpg</code></li>
+      </ul>
+    </div>
+    <div class="card">
+      <div class="row">
+        <label class="btn" for="dirInput">เลือกโฟลเดอร์</label>
+        <input id="dirInput" type="file" webkitdirectory directory multiple hidden>
+        <label class="row" style="gap:6px;font-size:.92rem"><input type="checkbox" id="useTest" checked> ใช้เฉพาะ test.txt (ถ้ามี)</label>
+        <label class="row" style="gap:6px;font-size:.92rem">จำกัด <input type="number" id="limit" min="0" value="0" style="width:84px;font:inherit;padding:4px 8px;border-radius:8px;border:1px solid var(--line);background:var(--surface);color:var(--ink)"> ภาพ (0 = ทั้งหมด, สุ่มแบบคงที่)</label>
+      </div>
+      <p class="status" id="scanStatus">ยังไม่ได้เลือกโฟลเดอร์</p>
+      <div class="row">
+        <button class="btn" id="evalStart" type="button" disabled>เริ่มประเมิน</button>
+        <button class="btn ghost" id="evalStop" type="button" disabled>หยุด</button>
+        <button class="btn ghost" id="evalCsv" type="button" disabled>ดาวน์โหลดผลรายภาพ (CSV)</button>
+      </div>
+      <div class="progress" id="evalProg"><i></i></div>
+      <p class="status" id="evalStatus"></p>
+    </div>
+
+    <div id="evalResult" class="panel" hidden>
+      <div class="stats" id="evalStats"></div>
+
+      <h3>1 · Segmentation</h3>
+      <div class="mbars" id="iouBars"></div>
+      <div class="tbl"><table><thead><tr><th>ตัวชี้วัด</th><th>ค่าที่ได้</th><th>Notebook (test ทางการ)</th></tr></thead><tbody id="segTable"></tbody></table></div>
+
+      <h3>2 · สายพันธุ์ (37 คลาส)</h3>
+      <div class="tbl"><table><thead><tr><th>ตัวชี้วัด</th><th>ค่าที่ได้</th><th>Notebook (test ทางการ)</th></tr></thead><tbody id="breedTable"></tbody></table></div>
+      <div class="cm-wrap"><canvas id="cmBreed" aria-label="Confusion matrix 37 สายพันธุ์"></canvas></div>
+      <p class="status" id="cmHover">ชี้ที่ช่องเพื่อดูรายละเอียด · แถว = สายพันธุ์จริง คอลัมน์ = ที่โมเดลทาย · สีเข้มตามสัดส่วนในแถว</p>
+      <div class="tbl"><table><thead><tr><th>สายพันธุ์จริง</th><th>ทายเป็น</th><th>จำนวน</th></tr></thead><tbody id="pairTable"></tbody></table></div>
+      <details><summary style="cursor:pointer;font-family:var(--f-display)">ดูผลรายสายพันธุ์ (เรียงจาก F1 ต่ำสุด)</summary>
+        <div class="tbl" style="margin-top:10px"><table><thead><tr><th>สายพันธุ์</th><th>Precision</th><th>Recall</th><th>F1</th><th>จำนวน</th></tr></thead><tbody id="perBreed"></tbody></table></div>
+      </details>
+
+      <h3>3 · หมาหรือแมว</h3>
+      <div class="tbl"><table><thead><tr><th></th><th>ทายเป็นแมว</th><th>ทายเป็นหมา</th><th>Precision</th><th>Recall</th><th>F1</th></tr></thead><tbody id="spTable"></tbody></table></div>
+      <div class="tbl"><table><thead><tr><th>ตัวชี้วัด</th><th>ค่าที่ได้</th><th>Notebook (test ทางการ)</th></tr></thead><tbody id="spSummary"></tbody></table></div>
+    </div>
+  </div>
+</section>
+
+<!-- GUIDE -->
+<section id="guide">
+  <div class="sh"><h2>สิ่งที่ต้องมีและวิธีเปิด</h2></div>
+  <div class="req">
+    <div><b>1 · ไฟล์โมเดล ONNX</b><span class="muted">แปลงจาก checkpoint ครั้งเดียว ได้ไฟล์ราว 190 MB (ไม่อยู่ใน git)</span></div>
+    <div><b>2 · เบราว์เซอร์รุ่นใหม่</b><span class="muted">Chrome หรือ Edge 113 ขึ้นไปจะใช้ WebGPU ได้ (เร็ว) เบราว์เซอร์อื่นใช้ WebAssembly บน CPU (ช้ากว่าแต่ใช้ได้)</span></div>
+    <div><b>3 · อินเทอร์เน็ตครั้งแรก</b><span class="muted">หน้าเว็บโหลดไลบรารี onnxruntime-web และฟอนต์จาก CDN ตัวโมเดลกับภาพอยู่ในเครื่อง</span></div>
+    <div><b>4 · หน่วยความจำ</b><span class="muted">RAM ว่างราว 1–2 GB ระหว่างโหลดโมเดล</span></div>
+  </div>
+  <ol class="steps">
+    <li><b>แปลงโมเดล</b> (ทำครั้งเดียว ที่โฟลเดอร์โปรเจกต์ ต้องติดตั้ง <code>onnx</code> ก่อน)
+<pre class="cmd">pip install onnx onnxscript onnxruntime
+python export_onnx.py
+# ได้ไฟล์ web/model/pet_multitask.onnx</pre></li>
+    <li><b>วิธีที่แนะนำ:</b> เปิดเว็บเซิร์ฟเวอร์ไฟล์ธรรมดาที่โฟลเดอร์โปรเจกต์ หน้านี้จะโหลดโมเดลให้อัตโนมัติ
+<pre class="cmd">python -m http.server 8000
+# แล้วเปิด http://localhost:8000/web/inference.html</pre></li>
+    <li><b>หรือเปิดไฟล์ตรง ๆ</b> (ดับเบิลคลิก <code>web/inference.html</code>) แล้วกดปุ่ม "เลือกไฟล์โมเดล" ด้านล่างเพื่อชี้ไปที่ไฟล์ <code>.onnx</code> เบราว์เซอร์ไม่อนุญาตให้หน้าแบบ <code>file://</code> อ่านไฟล์เองโดยอัตโนมัติ</li>
+  </ol>
+</section>
+
+<!-- NOTES -->
+<section id="notes">
+  <div class="sh"><h2>ข้อควรรู้</h2></div>
+  <ol class="limits">
+    <li><div><b>ผลอาจต่างจาก Python เล็กน้อย</b><p class="muted">หน้านี้เขียนการย่อภาพแบบ Bilinear ของ PIL ใหม่ในเบราว์เซอร์ แต่ตัวถอดรหัส JPEG ของเบราว์เซอร์ต่างจากของ PIL ค่าตัวชี้วัดจึงอาจคลาดจาก <code>evaluate.py</code> ราวหลักทศนิยมที่ 3</p></div></li>
+    <li><div><b>ความเร็ว</b><p class="muted">WebGPU ใช้เวลาราวภาพละ 0.1–0.5 วินาที (ขึ้นกับการ์ดจอ) WASM บน CPU ราว 1–3 วินาที การประเมิน test ทั้งชุดด้วย WASM อาจใช้เวลาเป็นชั่วโมง ให้ตั้ง "จำกัด" เป็น 200–500 ภาพเพื่อดูแนวโน้มก่อน</p></div></li>
+    <li><div><b>โมเดลตอบได้แค่ 37 สายพันธุ์</b><p class="muted">ภาพที่ไม่ใช่หมาหรือแมว หรือสายพันธุ์อื่น จะถูกทายเป็นหนึ่งใน 37 สายพันธุ์เสมอ แม้ความมั่นใจจะสูง</p></div></li>
+    <li><div><b>ภาพถูกบีบเป็นสี่เหลี่ยมจัตุรัส</b><p class="muted">เหมือนตอนเทรน ภาพแนวนอนหรือแนวตั้งจะถูกยืดก่อนเข้าโมเดล แล้ว Mask จะถูกยืดกลับให้ตรงกับภาพเดิมตอนแสดงผล</p></div></li>
+    <li><div><b>ความเป็นส่วนตัว</b><p class="muted">ภาพและโมเดลถูกประมวลผลในแท็บนี้เท่านั้น ไม่มีการอัปโหลด</p></div></li>
+  </ol>
+</section>
+
+<footer>เครื่องมือ: <a class="ext" href="https://onnxruntime.ai/docs/tutorials/web/" target="_blank" rel="noopener">ONNX Runtime Web 1.22.0</a> · โมเดล: <code>best_model_resnet50.pth</code> (epoch 10) แปลงด้วย <code>export_onnx.py</code></footer>
+
+</main>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/onnxruntime-web@1.22.0/dist/ort.webgpu.min.js"></script>
+<script src="assets/inference.js"></script>
+</body>
+</html>

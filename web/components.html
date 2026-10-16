@@ -1,0 +1,482 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Component Deep-dive</title>
+<meta name="description" content="เหตุผลเบื้องหลังการเลือกแต่ละองค์ประกอบของโมเดล เทียบกับเอกสารประกอบการสอน DLMed-08, 10, 12 และทางเลือกที่ไม่ได้เลือก">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js"></script>
+</head>
+<body>
+
+<nav class="topnav" aria-label="เมนูหลัก"><div class="in">
+  <a class="brand" href="../index.html"><span class="tristrip" aria-hidden="true"><i style="background:var(--tri-bg)"></i><i style="background:var(--tri-pet)"></i><i style="background:var(--tri-edge)"></i></span>Pet Multi-task</a>
+  <ul>
+    <li><a href="../index.html">ภาพรวม</a></li>
+    <li><a href="data.html">ทำความรู้จักข้อมูล</a></li>
+    <li><a href="components.html" aria-current="page">เจาะลึกองค์ประกอบ</a></li>
+    <li><a href="qa.html">คำถามที่คาดว่าจะเจอ</a></li>
+  </ul>
+  <div class="tools">
+    <button class="themebtn icon" type="button" aria-label="สลับโหมดมืดหรือสว่าง">☾</button>
+    <a class="cta" href="inference.html">▶ ทดลองโมเดล</a>
+  </div>
+</div></nav>
+
+<div class="wrap">
+
+<nav class="toc" aria-label="สารบัญ">
+  <div class="lbl">ในหน้านี้</div>
+  <ol>
+    <li><a href="#highlights">จุดเด่นใน README</a></li>
+    <li><a href="#summary">ตารางสรุปการตัดสินใจ</a></li>
+    <li><a href="#mtl">1 · Multi-task</a></li>
+    <li><a href="#split">2 · การแบ่งข้อมูล</a></li>
+    <li><a href="#aug">3 · Augmentation</a></li>
+    <li><a href="#backbone">4 · Backbone</a></li>
+    <li><a href="#decoder">5 · Decoder</a></li>
+    <li><a href="#heads">6 · หัวจำแนก</a></li>
+    <li><a href="#loss">7 · Loss และ λ</a></li>
+    <li><a href="#optim">8 · การเทรน</a></li>
+    <li><a href="#select">9 · เลือก Checkpoint</a></li>
+    <li><a href="#metrics">10 · ตัวชี้วัด</a></li>
+    <li><a href="#outside">นอกเอกสารการสอน</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <div class="tristrip" aria-hidden="true"><i style="background:var(--tri-bg)"></i><i style="background:var(--tri-pet)"></i><i style="background:var(--tri-edge)"></i></div>
+  <div class="eyebrow">Component Deep-dive</div>
+  <h1>ทำไมถึงเลือกแบบนี้ และทำไมไม่เลือกแบบอื่น</h1>
+  <p class="lede">หน้าภาพรวมเล่าว่าโมเดลทำงานอย่างไร หน้านี้ลงลึกทีละองค์ประกอบว่าเราเลือกอะไร เหตุผลคืออะไร เอกสารประกอบการสอนพูดถึงเรื่องนี้ว่าอย่างไร และทางเลือกอื่นที่ไม่ได้ใช้มีข้อดีข้อเสียอย่างไร</p>
+  <div class="howto">
+    <span class="t">อ่านอ้างอิงในหน้านี้อย่างไร</span>
+    <ul>
+      <li><b>DLMed-08</b> · Chapter 08: Pre-trained CNN Architecture and Data Augmentation</li>
+      <li><b>DLMed-10</b> · Chapter 10: Practical Implementation of Convolutional Neural Networks (PyTorch)</li>
+      <li><b>DLMed-12</b> · Chapter 12: Image Segmentation Using Autoencoder Architectures</li>
+      <li>เลขหน้า เช่น <span class="ref"><b>DLMed-08</b> น.57</span> คือเลขหน้าของไฟล์ PDF ใน <code>DLMed/</code> ไม่ใช่เลขที่พิมพ์บนสไลด์</li>
+      <li>กล่องสีแดง <span class="down">คำถามที่อาจโดนถาม</span> คือจุดอ่อนหรือข้อโต้แย้งที่ควรเตรียมคำตอบไว้</li>
+    </ul>
+  </div>
+</header>
+
+<!-- HIGHLIGHTS -->
+<section id="highlights">
+  <div class="sh">
+    <div class="chips"><span class="chip">README · จุดเด่น</span></div>
+    <h2>จุดเด่น 6 ข้อใน README อธิบายไว้ตรงไหน</h2>
+  </div>
+  <div class="prose"><p>README มีรายการ "✨ จุดเด่น" 6 ข้อ แต่ละข้อมีคำอธิบายเต็มอยู่ในหัวข้อด้านล่าง กดเพื่อไปที่หัวข้อนั้นได้เลย</p></div>
+  <div class="hl-index">
+    <a href="#mtl"><b>🧩 Shared Backbone</b><span>หัวข้อ 1 · ทำไมใช้ encoder ชุดเดียวทั้ง 3 งาน</span></a>
+    <a href="#loss"><b>⚖️ ปรับน้ำหนัก Loss (λ) ได้</b><span>หัวข้อ 7 · λ คืออะไร และผลของ 3 รูปแบบ</span></a>
+    <a href="#split"><b>🔒 Official Split + Stratified 80:20</b><span>หัวข้อ 2 · ป้องกัน Data Leakage อย่างไร</span></a>
+    <a href="#aug"><b>🔄 Synchronized Augmentation</b><span>หัวข้อ 3 · ทำไมภาพกับ Mask ต้องแปลงพร้อมกัน</span></a>
+    <a href="#optim"><b>⚡ bfloat16 · AdamW · Cosine · cuDNN</b><span>หัวข้อ 8 · แต่ละตัวช่วยอะไร</span></a>
+    <a href="#metrics"><b>📊 ตัวชี้วัดครบถ้วน</b><span>หัวข้อ 10 · mIoU, Dice, Precision, Recall, F1, CM</span></a>
+  </div>
+</section>
+
+<!-- SUMMARY -->
+<section id="summary">
+  <div class="sh"><h2>ตารางสรุปการตัดสินใจ</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th>องค์ประกอบ</th><th>เราเลือก</th><th>ทางเลือกในเอกสารการสอน</th><th>เหตุผลสั้น ๆ</th></tr></thead>
+    <tbody>
+      <tr><td>รูปแบบงาน</td><td>Multi-task · Hard parameter sharing</td><td>แยกโมเดลต่องาน · smp <code>aux_params</code></td><td>ได้คะแนนความยากสูงสุด ใช้พารามิเตอร์ราวครึ่งเดียว</td></tr>
+      <tr><td>แบ่งข้อมูล</td><td>Official test + Stratified 80:20</td><td><code>train_test_split</code> แบบสุ่ม 10%</td><td>เทียบกับงานอื่นได้ ทุกสายพันธุ์มีใน Val ครบ</td></tr>
+      <tr><td>Augmentation</td><td>Flip · Rotate ±10° · ColorJitter (ระดับ Mild)</td><td>Cutout, MixUp, CutMix, Mosaic, Progressive</td><td>ต้องแปลง Mask ตามได้ และไม่ทำลายขอบ</td></tr>
+      <tr><td>Backbone</td><td>ResNet-50 ImageNet · Fine-tune ทั้งหมด</td><td>VGG, DenseNet, MobileNet, Inception, Feature extraction</td><td>จุดสมดุลความแม่น/ความเร็ว/ขนาด</td></tr>
+      <tr><td>Decoder</td><td>U-Net + ConvTranspose2d</td><td>PSPNet, LinkNet, PAN, DeepLabV3+, Unpooling, Bilinear</td><td>Skip connection กู้รายละเอียดขอบ</td></tr>
+      <tr><td>หัวจำแนก</td><td>GAP + Dropout + MLP 2 หัวแยกกัน</td><td>Flatten + FC, หัวเดียวแบบ smp</td><td>พารามิเตอร์น้อย ตรงโจทย์ที่ให้ 2 หัวอิสระ</td></tr>
+      <tr><td>Loss</td><td>CE + Dice · Label smoothing · λ คงที่</td><td>Dice อย่างเดียว, Jaccard, Hinge, BCE</td><td>CE นิ่ง Dice ช่วยคลาสขอบที่เล็ก</td></tr>
+      <tr><td>Optimizer</td><td>AdamW + Cosine · bf16</td><td>Adam 1e-4 + ลด LR แบบขั้นบันได, SGD</td><td>Weight decay ที่ถูกต้อง และ LR ลดอย่างนุ่มนวล</td></tr>
+      <tr><td>เลือก Checkpoint</td><td>(Val mIoU + Val Breed F1) ÷ 2</td><td>Val IoU อย่างเดียว</td><td>มี 2 งานหลักที่ต้องดีพร้อมกัน</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<!-- 1 MTL -->
+<section id="mtl" class="comp">
+  <div class="head">
+    <div class="chips"><span class="chip">หัวข้อ 1</span><span class="chip plain">จุดเด่น · Shared Backbone</span><span class="chip plain">models/multitask_model.py</span></div>
+    <h2>Multi-task Learning แบบ Hard Parameter Sharing</h2>
+    <p class="pick">เลือก: encoder ResNet-50 ชุดเดียว ส่งต่อให้ decoder 1 ตัวและหัวจำแนก 2 หัว เทรนพร้อมกันด้วย loss รวม</p>
+  </div>
+  <div class="prose">
+    <p><b>Hard parameter sharing</b> หมายถึงทุกงานใช้น้ำหนักชุดเดียวกันในส่วน encoder จริง ๆ ไม่ใช่แค่หน้าตาเหมือนกัน ทุกครั้งที่ loss ของงานใดงานหนึ่ง backprop กลับมา encoder จะถูกปรับให้ดีต่องานนั้นด้วย ต่างจาก <b>soft sharing</b> ที่แต่ละงานมี encoder ของตัวเองแล้วใช้เทอมพิเศษดึงน้ำหนักให้คล้ายกัน</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>ทางเลือก</th><th>จำนวนพารามิเตอร์</th><th>forward ต่อภาพ</th></tr></thead>
+    <tbody>
+      <tr><td><b>ของเรา</b> · encoder ร่วม</td><td class="num">48.8 ล้าน</td><td class="num">encoder 1 รอบ</td></tr>
+      <tr><td>แยก 3 โมเดล (Seg U-Net + Breed ResNet + Species ResNet)</td><td class="num">≈ 95.8 ล้าน</td><td class="num">encoder 3 รอบ</td></tr>
+    </tbody>
+  </table></div>
+  <div class="vs">
+    <div><span class="t">ทำไมเลือก</span><ul>
+      <li>ตรงประเภทงานที่ได้คะแนนความยากสูงสุด (Multi-task 4 คะแนน) และเกณฑ์บังคับให้ "เรียนรู้ร่วมกันอย่างน้อย 2 งาน และประเมินแยกแต่ละงาน" ซึ่งเราทำครบ 3 งาน</li>
+      <li>ประหยัดพารามิเตอร์ราว 49% และคำนวณ encoder เพียงครั้งเดียว</li>
+      <li>งาน segmentation บังคับให้ encoder สนใจ "ตัวสัตว์" ไม่ใช่พื้นหลัง ซึ่งน่าจะช่วยการจำแนกด้วย (เป็นสมมติฐาน ยังไม่ได้พิสูจน์ ดูกล่องแดง)</li>
+      <li>รูปแบบเดียวกับ <code>smp.Unet(..., aux_params=...)</code> ในเอกสารการสอน ที่ต่อหัวจำแนกจาก feature ชั้นลึกสุดของ encoder</li>
+    </ul></div>
+    <div><span class="t">ทางเลือกที่ไม่ได้เลือก</span><ul>
+      <li><b>แยกโมเดลต่องาน:</b> ง่ายและไม่มีปัญหางานแย่งกัน แต่ไม่ใช่ Multi-task และใช้ทรัพยากรเกือบ 2 เท่า</li>
+      <li><b>Cascade</b> (ตัดภาพสัตว์ก่อนแล้วค่อยจำแนก): ความผิดพลาดของขั้นแรกส่งต่อไปขั้นที่สอง และต้องรัน 2 โมเดล</li>
+      <li><b>Soft sharing / Cross-stitch:</b> ยืดหยุ่นกว่าเมื่องานขัดกันมาก แต่พารามิเตอร์มากขึ้นและไม่ได้สอนในวิชา</li>
+    </ul></div>
+  </div>
+  <p class="ref">อ้างอิง: <b>DLMed-12</b> น.84–86 (smp <code>aux_params</code>: encoder → pooling → dropout → FC) · <b>DLMed-10</b> น.108–109 (หัวข้อ "หลักการ Multi-task Learning" อยู่ในสารบัญ แต่ไม่มีเนื้อหาในไฟล์)</p>
+  <div class="risk"><b>คำถามที่อาจโดนถาม:</b> "Multi-task ดีกว่าเทรนแยกจริงไหม" ตอบตรง ๆ ว่ายังสรุปไม่ได้ เพราะไม่ได้เทรน single-task baseline มาเทียบ สิ่งที่ยืนยันได้คือประหยัดพารามิเตอร์และเวลา ส่วนเรื่องความแม่นเป็นงานต่อยอด</div>
+</section>
+
+<!-- 2 SPLIT -->
+<section id="split" class="comp">
+  <div class="head">
+    <div class="chips"><span class="chip">หัวข้อ 2</span><span class="chip plain">จุดเด่น · Official Split + Stratified</span><span class="chip plain">data/dataset.py</span></div>
+    <h2>การแบ่งข้อมูลและการป้องกัน Data Leakage</h2>
+    <p class="pick">เลือก: ใช้ test ทางการ 3,669 ภาพตามเดิม แล้วแบ่ง trainval 3,680 ภาพเป็น Train 2,944 / Val 736 ด้วย <a class="ext" href="https://scikit-learn.org/stable/modules/generated/sklearn.model_selection.StratifiedShuffleSplit.html" target="_blank" rel="noopener"><code>StratifiedShuffleSplit</code></a> (seed 42)</p>
+  </div>
+  <div class="prose">
+    <p><b>Stratified</b> คือการสุ่มแบ่งโดยรักษาสัดส่วนของแต่ละคลาสไว้ ผลคือทุกสายพันธุ์มีภาพใน Val ราว 19–20 ภาพ ถ้าสุ่มธรรมดา บางสายพันธุ์อาจได้แค่ 10 ภาพ และค่า Macro F1 บน Val ก็จะแกว่งกว่านี้</p>
+  </div>
+  <div class="vs">
+    <div><span class="t">ทำไมเลือก</span><ul>
+      <li>Test ทางการทำให้เทียบกับงานอื่นที่ใช้ชุดข้อมูลนี้ได้ และไม่มีใครกล่าวหาได้ว่าเลือก test ให้ง่าย</li>
+      <li>Test ใหญ่ (50%) ทำให้ตัวเลขผลลัพธ์นิ่ง ความต่าง 1% เท่ากับราว 37 ภาพ</li>
+      <li>Val มาจาก trainval เท่านั้น ใช้เลือก checkpoint ได้โดยไม่แตะ test</li>
+      <li>Augmentation ทำเฉพาะ train · Val และ Test ผ่านแค่ Resize + Normalize</li>
+    </ul></div>
+    <div><span class="t">ทางเลือกที่ไม่ได้เลือก</span><ul>
+      <li><b><code>train_test_split</code> แบบสุ่ม 10%</b> แบบในเอกสารการสอน: ง่าย แต่ไม่รับประกันว่าทุกคลาสอยู่ในทั้งสองกอง</li>
+      <li><b>รวมทั้งหมดแล้วแบ่ง 70/15/15 ใหม่:</b> ได้ข้อมูลเทรนมากขึ้น แต่เทียบกับงานอื่นไม่ได้</li>
+      <li><b>K-fold cross validation:</b> ค่าน่าเชื่อถือขึ้น แต่ต้องเทรน K ครั้ง (ครั้งละหลายชั่วโมง)</li>
+    </ul></div>
+  </div>
+  <p class="ref">อ้างอิง: <b>DLMed-10</b> น.31, 35 (ขั้นตอน Train/Validation split ด้วย <code>train_test_split(test_size=0.1)</code>) · น.82 (ห้ามให้โมเดลเรียนจาก test และใช้ <code>model.eval()</code> + <code>torch.no_grad()</code>) · <b>DLMed-12</b> น.82, 95 (แยกโฟลเดอร์ train/val/test และประเมินบน test ตอนท้าย)</p>
+  <div class="risk"><b>คำถามที่อาจโดนถาม:</b> "ตาราง 3 รูปแบบที่ใช้ test มาเทียบ ถือว่าเลือกโมเดลด้วย test ไหม" ไม่ใช่ เพราะ Balanced ถูกกำหนดเป็นแบบหลักตั้งแต่ก่อนเทรน ตารางใช้รายงาน trade-off เท่านั้น และ checkpoint ของทุกแบบเลือกด้วย Val</div>
+</section>
+
+<!-- 3 AUG -->
+<section id="aug" class="comp">
+  <div class="head">
+    <div class="chips"><span class="chip">หัวข้อ 3</span><span class="chip plain">จุดเด่น · Synchronized Augmentation</span><span class="chip plain">data/dataset.py · SynchronizedTransform</span></div>
+    <h2>Data Augmentation ที่ภาพกับ Mask ต้องไปด้วยกัน</h2>
+    <p class="pick">เลือก: Resize 224 → Flip แนวนอน (p=0.5) → หมุน ±10° (p=0.5) → ColorJitter 0.15 (p=0.7, เฉพาะภาพ)</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>ขั้นตอน</th><th>ภาพ</th><th>Mask</th><th>ทำไม</th></tr></thead>
+    <tbody>
+      <tr><td>Resize 224×224</td><td>Bilinear</td><td>Nearest</td><td>Mask เป็นเลขคลาส ห้ามเฉลี่ย ถ้าใช้ Bilinear จะได้ค่า 1.5 ที่ไม่มีความหมาย</td></tr>
+      <tr><td>Flip แนวนอน</td><td>✓</td><td>✓ (สุ่มครั้งเดียวใช้ทั้งคู่)</td><td>สัตว์หันซ้ายหรือขวาก็เป็นสายพันธุ์เดิม</td></tr>
+      <tr><td>หมุน ±10°</td><td>Bilinear</td><td>Nearest · มุมเดียวกัน</td><td>รับมือภาพถ่ายที่เอียงเล็กน้อย</td></tr>
+      <tr><td>ColorJitter</td><td>✓</td><td>✗</td><td>สีเปลี่ยนแต่ตำแหน่งตัวสัตว์ไม่เปลี่ยน</td></tr>
+    </tbody>
+  </table></div>
+  <div class="analogy"><b>เทียบกับระดับในเอกสารการสอน:</b> DLMed-08 น.29 แบ่งความแรงไว้ 5 ระดับ การ Flip อยู่ระดับ <mark>เบามาก</mark> ส่วนการหมุน ±5–10° กับ color jitter ต่ำอยู่ระดับ <mark>เบา (Mild)</mark> ซึ่ง "รักษารูปร่างหลักของภาพ" ไว้ได้ เหมาะกับงานที่ต้องการขอบระดับพิกเซล</div>
+  <div class="vs">
+    <div><span class="t">ทำไมเลือก</span><ul>
+      <li>ทุกการแปลงเชิงเรขาคณิตต้องทำกับ Mask ด้วยมุมเดียวกัน ไม่งั้นเฉลยจะไม่ตรงกับภาพ เป็นหลักเดียวกับขั้นที่ 3 ของ Mosaic ที่ต้องเลื่อน bounding box ตามภาพ</li>
+      <li>Backbone ผ่าน ImageNet มาแล้ว ปัญหา "โมเดลใหม่โดนข้อมูลยากตั้งแต่ต้น" ที่เอกสารเตือนจึงน้อยลง</li>
+      <li>เทรนแค่ 30 epoch ขณะที่ตาราง Progressive ในเอกสารเพิ่มความแรงเต็มที่หลัง epoch 51</li>
+    </ul></div>
+    <div><span class="t">ทางเลือกที่ไม่ได้เลือก</span><ul>
+      <li><b><a class="ext" href="https://arxiv.org/abs/1710.09412" target="_blank" rel="noopener">MixUp</a>:</b> ผสมทั้งภาพและป้ายแบบ one-hot ใช้กับ mask 3 คลาสยาก และเป็นสายพันธุ์ผสมที่ไม่มีอยู่จริง</li>
+      <li><b><a class="ext" href="https://arxiv.org/abs/1708.04552" target="_blank" rel="noopener">Cutout</a> / <a class="ext" href="https://arxiv.org/abs/1708.04896" target="_blank" rel="noopener">Random Erase</a> / GridMask:</b> ลบส่วนของตัวสัตว์ แล้ว mask ตรงนั้นควรเป็นอะไร ไม่ชัดเจน</li>
+      <li><b><a class="ext" href="https://arxiv.org/abs/1905.04899" target="_blank" rel="noopener">CutMix</a> / <a class="ext" href="https://arxiv.org/abs/2004.10934" target="_blank" rel="noopener">Mosaic</a>:</b> ต้องตัดแปะ mask ตามไปด้วย และทำให้ภาพมีสัตว์หลายตัวหลายสายพันธุ์</li>
+      <li><b>หมุน ±30° ขึ้นไป, Perspective:</b> บิดรูปร่างจนขอบไม่สมจริง</li>
+      <li><b>Progressive / Adaptive:</b> เพิ่มความซับซ้อน คุ้มเมื่อเทรนนานหลายสิบ epoch</li>
+      <li><b>RandomResizedCrop:</b> ใช้บ่อยในงานจำแนก แต่อาจตัดตัวสัตว์ออกบางส่วน (เป็นตัวเลือกที่น่าลองต่อ)</li>
+    </ul></div>
+  </div>
+  <p class="ref">อ้างอิง: <b>DLMed-08</b> น.7–10 (Photometric vs Geometric) · น.11–23 (Occlusion, MixUp, CutMix, Mosaic) · น.25–31 (Static vs Dynamic, Progressive) · น.29 (ตาราง Weak → Strong) · <b>DLMed-10</b> น.102–104 (transforms.v2, Resize ค่าเริ่มต้น BILINEAR, RandomRotation ค่าเริ่มต้น NEAREST) · <b>DLMed-12</b> น.81 (ภาพและ mask "ใช้ transform เดียวกันได้")</p>
+  <div class="risk"><b>คำถามที่อาจโดนถาม:</b> "ทำไม Augmentation เบาจัง เอกสารบอกว่าแบบ static กำลังได้รับความนิยมลดลง" ตอบว่าเลือกระดับเบาเพราะเป็นงาน segmentation ที่ต้องรักษาขอบ และเทรนสั้น ส่วน augmentation ที่แรงขึ้นหรือแบบ class-aware สำหรับสายพันธุ์ที่สับสนบ่อยคืองานต่อยอด</div>
+</section>
+
+<!-- 4 BACKBONE -->
+<section id="backbone" class="comp">
+  <div class="head">
+    <div class="chips"><span class="chip">หัวข้อ 4</span><span class="chip plain">models/backbone.py</span></div>
+    <h2>Backbone: ResNet-50 ที่ผ่าน ImageNet และ Fine-tune ทั้งตัว</h2>
+    <p class="pick">เลือก: <a class="ext" href="https://pytorch.org/vision/stable/models/generated/torchvision.models.resnet50.html" target="_blank" rel="noopener"><code>resnet50(weights=ResNet50_Weights.DEFAULT)</code></a> (IMAGENET1K_V2) ดึง feature 5 ระดับ C1–C5 และเทรนทุกชั้นด้วย LR 1e-4</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>ระดับ</th><th>ขนาด (จากภาพ 224)</th><th>ช่องสัญญาณ</th><th>ใช้ที่ไหน</th></tr></thead>
+    <tbody>
+      <tr><td>C1 · conv1</td><td class="num">112×112</td><td class="num">64</td><td>skip → dec1</td></tr>
+      <tr><td>C2 · layer1</td><td class="num">56×56</td><td class="num">256</td><td>skip → dec2</td></tr>
+      <tr><td>C3 · layer2</td><td class="num">28×28</td><td class="num">512</td><td>skip → dec3</td></tr>
+      <tr><td>C4 · layer3</td><td class="num">14×14</td><td class="num">1024</td><td>skip → dec4</td></tr>
+      <tr><td>C5 · layer4</td><td class="num">7×7</td><td class="num">2048</td><td>จุดเริ่ม decoder และ GAP → หัวจำแนก</td></tr>
+    </tbody>
+  </table></div>
+  <div class="vs">
+    <div><span class="t">ทำไมเลือก</span><ul>
+      <li>เอกสารให้เลือกจาก 3 ปัจจัย: ความแม่น ความเร็ว ขนาด ในกราฟของ DLMed-08 น.57 ResNet-50 ได้ top-1 ราว 74.5% ที่เวลา ~3.5 เท่าของ SqueezeNet ขณะที่ VGG-16/19 ได้ราว 70% แต่ช้า 6.5–8 เท่าและใหญ่ที่สุด</li>
+      <li><b>Residual connection</b> (บวกค่า input เข้ากับ output ของบล็อก) ลดปัญหา vanishing gradient ทำให้เครือข่ายลึกเทรนได้</li>
+      <li>โครงสร้าง 5 stage ให้ feature หลายความละเอียดพอดีกับ skip connection ของ U-Net</li>
+      <li><b>Fine-tune ทั้งตัว</b> เพราะ decoder ใช้ feature ทุกระดับ ทุกระดับจึงควรปรับให้เข้ากับงาน segmentation ด้วย LR เล็กเพื่อไม่ทำลายสิ่งที่เรียนมา</li>
+      <li>เป็น encoder ตัวอย่างใน DLMed-12 (<a class="ext" href="https://github.com/qubvel-org/segmentation_models.pytorch" target="_blank" rel="noopener">smp</a> <code>encoder_name='resnet50'</code>)</li>
+    </ul></div>
+    <div><span class="t">ทางเลือกที่ไม่ได้เลือก</span><ul>
+      <li><b><a class="ext" href="https://arxiv.org/abs/1409.1556" target="_blank" rel="noopener">VGG-16/19</a>:</b> "ประสิทธิภาพดีแต่ช้า" และพารามิเตอร์มาก</li>
+      <li><b><a class="ext" href="https://arxiv.org/abs/1608.06993" target="_blank" rel="noopener">DenseNet</a>:</b> "ทำงานได้ดีแม้ข้อมูลน้อย" แต่กินหน่วยความจำมาก เพราะต่อ feature ทุกชั้นเข้าด้วยกัน</li>
+      <li><b><a class="ext" href="https://arxiv.org/abs/1801.04381" target="_blank" rel="noopener">MobileNet</a> / SqueezeNet:</b> เร็วและเล็ก แต่แม่นน้อยกว่า</li>
+      <li><b>Inception-v3, ResNet-101, Inception-ResNet:</b> แม่นขึ้นเล็กน้อยแต่ช้ากว่า 1.5–4 เท่า</li>
+      <li><b>Fixed feature extraction</b> (แช่แข็ง backbone): เทรนเร็ว แต่ feature ระดับตื้นไม่ได้ปรับเพื่อขอบภาพสัตว์</li>
+      <li><b>Fine-tune บางส่วน</b> (แช่แข็งชั้นต้น): เป็นทางกลางที่น่าลองต่อ</li>
+    </ul></div>
+  </div>
+  <p class="ref">อ้างอิง: <b>DLMed-08</b> น.46–49 (Transfer learning: feature extraction vs fine-tuning) · น.50 (input ต้องเป็น RGB 3 ช่อง, ใช้ Global Pooling คั่นก่อนหัว) · น.54 (3 ปัจจัยเลือกโมเดล) · น.57 (กราฟความแม่น vs เวลา) · น.70–73 (Residual block, projection shortcut 1×1) · <b>DLMed-10</b> น.91–93, 111 (<code>resnet50(weights=...IMAGENET1K_V2)</code> แล้วเปลี่ยนหัว) · <b>DLMed-12</b> น.84</p>
+  <div class="risk"><b>คำถามที่อาจโดนถาม:</b> "ImageNet มีสายพันธุ์หมาแมวหลายสายพันธุ์อยู่แล้ว ถือว่าโกงไหม" ไม่ถือเป็น data leakage ตามปกติ เพราะเราไม่ได้นำภาพ test ไปเทรน (แม้จะยืนยัน 100% ไม่ได้ว่า ImageNet ไม่มีภาพซ้ำ เพราะทั้งสองชุดเก็บจากอินเทอร์เน็ต) แต่เป็นเหตุผลที่ transfer learning ได้ผลดีมาก ควรยอมรับตรง ๆ ว่าโดเมนใกล้กัน ต่างจากภาพทางการแพทย์ที่เอกสารบอกว่า feature จาก ImageNet ถ่ายทอดได้น้อยกว่า</div>
+</section>
+
+<!-- 5 DECODER -->
+<section id="decoder" class="comp">
+  <div class="head">
+    <div class="chips"><span class="chip">หัวข้อ 5</span><span class="chip plain">models/decoder.py</span></div>
+    <h2>Decoder: U-Net พร้อม Skip Connection และ Transposed Convolution</h2>
+    <p class="pick">เลือก: 4 DecoderBlock (ConvTranspose2d ×2 → ต่อ skip → Conv-BN-ReLU ×2) จาก 7×7 ไป 112×112 แล้วขยายอีกครั้งเป็น 224×224 และ Conv 1×1 ออก 3 คลาส</p>
+  </div>
+  <div class="prose">
+    <p>Encoder ย่อภาพจนเหลือ 7×7 จึงรู้ว่า <b>"อะไร"</b> อยู่ในภาพแต่เสียข้อมูลว่า <b>"อยู่ตรงไหน"</b> Decoder ขยายกลับทีละ 2 เท่า และทุกครั้งที่ขยายจะ <b>ต่อ (concat)</b> feature ขนาดเดียวกันจาก encoder เข้ามา ทำให้กู้รายละเอียดขอบและเส้นขนกลับมาได้</p>
+  </div>
+  <div class="tbl"><table>
+    <thead><tr><th>วิธีขยายภาพ (Upsampling)</th><th>เรียนรู้ได้</th><th>สถานะในงานนี้</th></tr></thead>
+    <tbody>
+      <tr><td>Nearest / Bilinear interpolation</td><td>✗</td><td>ไม่ได้ใช้ (ใช้ Bilinear เฉพาะกรณีขนาดไม่ตรงกัน)</td></tr>
+      <tr><td><b>Transposed convolution</b></td><td>✓</td><td><b>ใช้</b> · ทุก DecoderBlock และชั้นสุดท้าย</td></tr>
+      <tr><td>Max unpooling</td><td>✗</td><td>ไม่ได้ใช้ · เอกสารระบุว่า "ไม่ค่อยใช้แล้วในปัจจุบัน"</td></tr>
+    </tbody>
+  </table></div>
+  <div class="vs">
+    <div><span class="t">ทำไมเลือก</span><ul>
+      <li>U-Net ถูกพัฒนามาเพื่อภาพทางการแพทย์โดยตรง ตรงกับชื่อวิชา และเป็นสถาปัตยกรรมหลักของ DLMed-12</li>
+      <li>คลาส "ขอบ" ของ trimap เป็นแถบบางรอบตัวสัตว์ จึงต้องการรายละเอียดความละเอียดสูงจาก skip connection</li>
+      <li>Transposed convolution มีน้ำหนักที่เรียนได้ จึงขยายภาพแบบที่เหมาะกับข้อมูล ไม่ใช่สูตรตายตัว</li>
+      <li>เอกสารบอกว่า encoder กับ decoder "ไม่จำเป็นต้องสมมาตร" การใช้ ResNet-50 คู่กับ decoder ที่เขียนเองจึงทำได้</li>
+    </ul></div>
+    <div><span class="t">ทางเลือกที่ไม่ได้เลือก</span><ul>
+      <li><b><a class="ext" href="https://arxiv.org/abs/1706.05587" target="_blank" rel="noopener">DeepLabV3</a> / <a class="ext" href="https://arxiv.org/abs/1802.02611" target="_blank" rel="noopener">V3+</a>:</b> atrous conv และ ASPP เก็บบริบทหลายสเกลได้ดี เหมาะกับฉากที่มีวัตถุหลายขนาด ภาพของเรามีสัตว์ตัวเดียวเป็นส่วนใหญ่</li>
+      <li><b><a class="ext" href="https://arxiv.org/abs/1612.01105" target="_blank" rel="noopener">PSPNet</a>:</b> pyramid pooling เด่นเรื่องบริบทรวม แต่ขอบหยาบกว่าเมื่อไม่มี decoder ละเอียด</li>
+      <li><b><a class="ext" href="https://arxiv.org/abs/1707.03718" target="_blank" rel="noopener">LinkNet</a>:</b> เบาและเร็ว ใช้การบวกแทนการต่อ เหมาะเมื่อทรัพยากรจำกัด</li>
+      <li><b><a class="ext" href="https://arxiv.org/abs/1805.10180" target="_blank" rel="noopener">PAN</a>, <a class="ext" href="https://arxiv.org/abs/1612.03144" target="_blank" rel="noopener">FPN</a>, <a class="ext" href="https://arxiv.org/abs/1807.10165" target="_blank" rel="noopener">UNet++</a>:</b> ดีกว่าในบางงาน แต่ซับซ้อนกว่าโดยไม่มีหลักฐานว่าจำเป็นกับงานนี้</li>
+    </ul></div>
+  </div>
+  <p class="ref">อ้างอิง: <b>DLMed-12</b> น.11–12, 16 (encoder/decoder ไม่ต้องสมมาตร) · น.21 (วิธี upsampling 3 แบบ) · น.25–47 (transposed convolution และ <code>nn.ConvTranspose2d</code>) · น.48 (unpooling) · น.54–55, 70 (U-Net: encoder รู้ WHAT, decoder กู้ WHERE) · น.71–75 (PSPNet, LinkNet, PAN, DeepLabV3/V3+) · <b>DLMed-10</b> น.21 (BatchNorm) · น.87 (<code>ConvTranspose2d</code>)</p>
+  <div class="risk"><b>คำถามที่อาจโดนถาม:</b> "Decoder มีพารามิเตอร์ 24 ล้าน ใหญ่พอ ๆ กับ backbone ทำไมไม่ใช้ decoder ที่เบากว่า" ตอบว่ายังไม่ได้ลองลดขนาด เป็นจุดที่ปรับได้ ส่วน transposed conv อาจทำให้เกิดลายตารางหมากรุก (<a class="ext" href="https://distill.pub/2016/deconv-checkerboard/" target="_blank" rel="noopener">checkerboard</a>) แต่ Conv 3×3 ที่ตามมาช่วยลดได้</div>
+</section>
+
+<!-- 6 HEADS -->
+<section id="heads" class="comp">
+  <div class="head">
+    <div class="chips"><span class="chip">หัวข้อ 6</span><span class="chip plain">models/multitask_model.py</span></div>
+    <h2>หัวจำแนก: Global Average Pooling + Dropout + MLP แยก 2 หัว</h2>
+    <p class="pick">เลือก: C5 (2048×7×7) → GAP → Dropout 0.3 → Breed: 2048→512→37 (มี Dropout 0.2) · Species: 2048→128→2</p>
+  </div>
+  <div class="vs">
+    <div><span class="t">ทำไมเลือก</span><ul>
+      <li><b>GAP</b> ยุบ 7×7 เหลือ 1 ค่าต่อช่อง ได้ vector 2048 ค่า ไม่ต้องใช้ FC ขนาดใหญ่ เป็นแนวคิดเดียวกับ GoogLeNet และทำให้รับภาพหลายขนาดได้</li>
+      <li><b>Dropout 0.3</b> อยู่ในช่วงที่เอกสารแนะนำ 0.2–0.5 ช่วยลด overfitting ในชุดข้อมูลเล็ก</li>
+      <li>หัวสายพันธุ์มีชั้นซ่อน 512 เพราะเป็นงานละเอียด 37 คลาส ส่วนหัวหมาแมวใช้ 128 ก็พอ</li>
+      <li>โจทย์กำหนดให้ 2 หัว <b>แยกและไม่ขึ้นต่อกัน</b> จึงไม่อนุมานหมาแมวจากสายพันธุ์</li>
+    </ul></div>
+    <div><span class="t">ทางเลือกที่ไม่ได้เลือก</span><ul>
+      <li><b>Flatten + FC</b> (แบบ AlexNet/VGG): พารามิเตอร์มหาศาลและ overfit ง่าย</li>
+      <li><b>หัว Linear ชั้นเดียว</b> แบบ smp <code>aux_params</code>: เบากว่า แต่อาจแยกสายพันธุ์ใกล้เคียงได้น้อยกว่า</li>
+      <li><b>หัวเดียวออก 37 คลาสแล้วรวมเป็นหมาแมว:</b> สอดคล้องกันเสมอ แต่ผิดเงื่อนไขโจทย์</li>
+      <li><b>Max pooling:</b> smp รองรับ แต่ไวต่อจุดรบกวนมากกว่า average</li>
+    </ul></div>
+  </div>
+  <p class="ref">อ้างอิง: <b>DLMed-08</b> น.50, 68 (Global Average Pooling) · น.58 (AlexNet: dropout และปัญหา overfit) · <b>DLMed-10</b> น.25 (Dropout 0.2–0.5) · น.89 (<code>AdaptiveAvgPool2d</code> ≈ GlobalAveragePooling2D) · <b>DLMed-12</b> น.85–86 (<code>aux_params: pooling='avg', dropout=0.5</code>)</p>
+  <div class="risk"><b>คำถามที่อาจโดนถาม:</b> "สองหัวขัดกันได้ไหม" ได้ในทางทฤษฎี แต่บน test ขัดกันแค่ 10 จาก 3,669 ภาพ เพราะใช้ feature ร่วม กรณี Sphynx → Chihuahua 12 ภาพ หัวหมาแมวก็ตอบ "หมา" ด้วยใน 10 ภาพ จึงเป็นการผิดพร้อมกัน ไม่ใช่ขัดกัน ถ้าต้องการบังคับให้สอดคล้องกัน 100% ใช้ consistency loss หรืออนุมานหมาแมวจากสายพันธุ์ (ได้ 99.45% เทียบกับหัวหมาแมว 99.51%)</div>
+</section>
+
+<!-- 7 LOSS -->
+<section id="loss" class="comp">
+  <div class="head">
+    <div class="chips"><span class="chip">หัวข้อ 7</span><span class="chip plain">จุดเด่น · ปรับน้ำหนัก Loss (λ)</span><span class="chip plain">utils/losses.py</span></div>
+    <h2>Loss: Cross-Entropy + Dice, Label Smoothing และน้ำหนัก λ</h2>
+    <p class="pick">เลือก: L_total = λ_seg × (CE + Dice) + λ_breed × CE(smoothing 0.05) + λ_species × CE · ค่าหลัก λ = 1.0 : 1.0 : 0.5</p>
+  </div>
+<div class="mathbox">
+$$\mathcal{L}_{total} = \lambda_{seg}\big(\mathcal{L}_{CE}^{seg} + \mathcal{L}_{Dice}\big) + \lambda_{breed}\,\mathcal{L}_{CE,\,ls}^{breed} + \lambda_{sp}\,\mathcal{L}_{CE}^{sp}$$
+$$\mathcal{L}_{CE} = -\sum_{c} y_c \log p_c \qquad \mathcal{L}_{Dice} = 1 - \frac{1}{C}\sum_{c=1}^{C} \frac{2\sum_i p_{i,c}\, y_{i,c} + \epsilon}{\sum_i p_{i,c} + \sum_i y_{i,c} + \epsilon}$$
+$$y^{ls}_c = (1-\varepsilon)\,y_c + \frac{\varepsilon}{K}, \quad \varepsilon = 0.05,\ K = 37 \;\Rightarrow\; y^{ls}_{true} \approx 0.951,\ \ y^{ls}_{other} \approx 0.0014$$
+<p>\(p_{i,c}\) คือความน่าจะเป็นจาก softmax ของพิกเซล \(i\) คลาส \(c\) ซึ่งหาอนุพันธ์ได้ Dice ในโค้ดรวมผลทั้ง batch ก่อนหาร (<code>dims = (0, 2, 3)</code>) และค่าหลักคือ \(\lambda_{seg} : \lambda_{breed} : \lambda_{sp} = 1 : 1 : 0.5\)</p>
+</div>
+  <div class="vs">
+    <div><span class="t">ทำไมเลือก</span><ul>
+      <li><b>Softmax + CE ต่อพิกเซล</b> เพราะแต่ละพิกเซลเป็นได้คลาสเดียว (multiclass) ตามที่ DLMed-12 กำหนด ต่างจาก multilabel ที่ใช้ sigmoid</li>
+      <li><b>Dice</b> วัดจากสัดส่วนการทับซ้อนของแต่ละคลาส คลาสขอบที่มีพิกเซลน้อยจึงมีน้ำหนักเท่าพื้นหลัง เอกสารระบุว่า Dice ช่วย "โดยเฉพาะเมื่อข้อมูลไม่สมดุล"</li>
+      <li><b>CE + Dice</b> CE ให้ gradient นิ่งตั้งแต่ต้น Dice ดึงคลาสเล็กขึ้นมา (การรวมสองตัวนี้เป็นสิ่งที่เราเพิ่มเอง เอกสารใช้ Dice เดี่ยว)</li>
+      <li><b>Label smoothing</b> เฉพาะสายพันธุ์ เพราะหลายคู่หน้าคล้ายกันจนเฉลยแบบมั่นใจ 100% เกินจริง ช่วยลดการมั่นใจเกินเหตุ</li>
+      <li><b>λ_species = 0.5</b> เพราะหมาแมวแยกง่ายและเรียนเสร็จเร็ว ไม่ควรดึง encoder มากเกินไป</li>
+    </ul></div>
+    <div><span class="t">ทางเลือกที่ไม่ได้เลือก</span><ul>
+      <li><b>Dice หรือ Jaccard อย่างเดียว:</b> ตรงกับตัวชี้วัด แต่ gradient แกว่งช่วงต้น</li>
+      <li><b><a class="ext" href="https://arxiv.org/abs/1708.02002" target="_blank" rel="noopener">Focal</a> / <a class="ext" href="https://arxiv.org/abs/1706.05721" target="_blank" rel="noopener">Tversky</a> / <a class="ext" href="https://arxiv.org/abs/1812.07032" target="_blank" rel="noopener">Boundary loss</a>:</b> เน้นคลาสยากหรือขอบได้ตรงกว่า แต่มีพารามิเตอร์ต้องจูนเพิ่ม</li>
+      <li><b>Hinge loss:</b> เอกสารเทียบกับ CE ไว้ แต่ไม่ให้ความน่าจะเป็น</li>
+      <li><b>BCE + sigmoid:</b> สำหรับ multilabel ไม่ตรงกับงานที่คำตอบมีได้คำตอบเดียว</li>
+      <li><b>λ อัตโนมัติ</b> (<a class="ext" href="https://arxiv.org/abs/1705.07115" target="_blank" rel="noopener">Uncertainty weighting</a>, <a class="ext" href="https://arxiv.org/abs/1711.02257" target="_blank" rel="noopener">GradNorm</a>): ไม่ต้องเดา λ แต่ไม่ได้สอนในวิชา และตีความผลยากกว่า</li>
+    </ul></div>
+  </div>
+  <h3>ผลของการเปลี่ยน λ (การทดลอง 3 รูปแบบ · ตรวจซ้ำจาก checkpoint จริง)</h3>
+  <div class="tbl"><table>
+    <thead><tr><th>รูปแบบ</th><th>λ seg : breed : species</th><th>epoch ที่เลือก</th><th>Val (mIoU + F1) ÷ 2</th><th>Test mIoU</th><th>Test Breed Acc</th></tr></thead>
+    <tbody>
+      <tr><td><b>Balanced</b> · แบบหลัก</td><td class="num">1.0 : 1.0 : 0.5</td><td class="num">10</td><td class="num"><b>0.8863</b></td><td class="num"><b>0.8266</b></td><td class="num">91.66%</td></tr>
+      <tr><td>Seg-focused</td><td class="num">2.0 : 0.5 : 0.5</td><td class="num">28</td><td class="num">0.8832</td><td class="num">0.8234 <span class="down">−0.003</span></td><td class="num">92.64% <span class="up">+0.98</span></td></tr>
+      <tr><td>Cls-focused</td><td class="num">0.5 : 2.0 : 0.5</td><td class="num">27</td><td class="num">0.8842</td><td class="num">0.8222 <span class="down">−0.004</span></td><td class="num">93.08% <span class="up">+1.42</span></td></tr>
+    </tbody>
+  </table></div>
+  <div class="prose">
+    <p>ทดสอบแบบจับคู่บนภาพ test ชุดเดียวกัน: ความต่างของ Breed accuracy มีนัยสำคัญทั้งสองแบบ (McNemar \(p = 0.006\) และ \(p < 0.001\)) ส่วน mIoU ต่ำกว่า Balanced เล็กน้อย (ช่วงความเชื่อมั่น 95% จาก bootstrap ไม่คร่อม 0 แต่ขนาดแค่ 0.3–0.4 จุด)</p>
+    <p><b>ข้อสังเกตสำคัญ:</b> Seg-focused ซึ่งให้น้ำหนัก segmentation 2 เท่า กลับได้ mIoU ต่ำกว่าและจำแนกเก่งกว่า Balanced ผลจึงไม่ได้มาจาก λ อย่างเดียว ตัวแปรกวนหลักคือ epoch ที่ถูกเลือก Balanced ถูกเลือกที่ epoch 10 ส่วนอีกสองแบบถูกเลือกที่ epoch 27–28 ซึ่งเทรนจนลู่เข้าแล้ว</p>
+  </div>
+  <div class="analogy"><b>ทำไมยังใช้ Balanced เป็นแบบหลัก:</b> เกณฑ์ที่กำหนดไว้ก่อนคือคะแนนบน Val และ Balanced ได้สูงสุด (0.8863) การเปลี่ยนไปใช้แบบอื่นเพราะผล test ดีกว่าเท่ากับใช้ข้อสอบจริงเลือกโมเดล ตัวเลข test ใช้รายงาน trade-off เท่านั้น</div>
+  <p class="ref">อ้างอิง: <b>DLMed-12</b> น.56–60 (final layer: multiclass ใช้ softmax, multilabel ใช้ sigmoid) · น.61–62 (label แบบเลขคลาสและ one-hot) · น.71 (Dice กับข้อมูลไม่สมดุล) · น.91 (DiceLoss, JaccardLoss) · <b>DLMed-10</b> น.43 (CE vs Hinge) · น.111 (BCEWithLogitsLoss สำหรับ multilabel)</p>
+  <div class="risk"><b>คำถามที่อาจโดนถาม:</b> "λ = 0.5 ของ species มาจากไหน" ตอบตรง ๆ ว่ากำหนดจากเหตุผลว่างานนี้ง่าย ไม่ได้จูน และทั้ง 3 รูปแบบเปลี่ยนเฉพาะ λ_seg กับ λ_breed แต่ checkpoint ถูกเลือกต่าง epoch กัน จึงยังไม่ใช่การเทียบที่ควบคุมตัวแปรได้ครบ ทางแก้คือประเมินทุกแบบที่ epoch เดียวกัน</div>
+</section>
+
+<!-- 8 OPTIM -->
+<section id="optim" class="comp">
+  <div class="head">
+    <div class="chips"><span class="chip">หัวข้อ 8</span><span class="chip plain">จุดเด่น · Training ที่ปรับจูนแล้ว</span><span class="chip plain">train.py</span></div>
+    <h2>การเทรน: AdamW, Cosine Annealing, bfloat16, cuDNN benchmark</h2>
+    <p class="pick">เลือก: AdamW (lr 1e-4, weight decay 1e-4) · CosineAnnealingLR ลดถึง 1e-6 ใน 30 epoch · batch 32 · autocast bfloat16 · TF32 · cuDNN benchmark</p>
+  </div>
+<div class="mathbox">
+$$\text{AdamW:}\quad \theta_{t} = \theta_{t-1} - \eta\left(\frac{\hat m_t}{\sqrt{\hat v_t}+\epsilon} + \lambda\,\theta_{t-1}\right),\qquad \eta = 10^{-4},\ \lambda = 10^{-4}$$
+$$\text{Cosine:}\quad \eta_t = \eta_{min} + \tfrac{1}{2}(\eta_{max}-\eta_{min})\left(1+\cos\frac{\pi t}{T}\right),\qquad T = 30,\ \eta_{min} = 10^{-6}$$
+<p>weight decay \(\lambda\theta\) อยู่นอกเทอมที่หารด้วย \(\sqrt{\hat v_t}\) จึงเป็น "decoupled" · ค่า LR: \(t=0 \to 10^{-4}\), \(t=10 \to 7.5\times10^{-5}\), \(t=15 \to 5\times10^{-5}\), \(t=30 \to 10^{-6}\)</p>
+</div>
+  <div class="tbl"><table>
+    <thead><tr><th>เทคนิค</th><th>ช่วยอะไร</th><th>แลกกับอะไร</th></tr></thead>
+    <tbody>
+      <tr><td><b>AdamW</b></td><td>ปรับขนาดก้าวแยกตามพารามิเตอร์ จึงจูนง่าย และ weight decay ทำงานถูกต้อง (ใน Adam ธรรมดา weight decay ถูกหารด้วยค่าปรับขนาดไปด้วย)</td><td>ใช้หน่วยความจำเพิ่ม 2 เท่าของจำนวนพารามิเตอร์ เก็บ moment</td></tr>
+      <tr><td><b>Cosine Annealing</b></td><td>LR ลดลงนุ่มนวล ช่วงต้นก้าวใหญ่ ช่วงท้ายก้าวเล็กเพื่อเข้าใกล้จุดต่ำสุด ไม่มีจุดที่ต้องเลือกว่าจะลดเมื่อไร</td><td>ต้องกำหนดจำนวน epoch ล่วงหน้า</td></tr>
+      <tr><td><b>bfloat16 autocast</b></td><td>คำนวณ 16 บิต เร็วขึ้นบน Tensor Core และใช้ VRAM น้อยลง bf16 มีช่วงเลขชี้กำลังเท่า fp32 จึงไม่ต้องใช้ GradScaler แบบ fp16</td><td>ความละเอียดทศนิยมลดลง (ไม่กระทบผลเพราะน้ำหนักยังเก็บเป็น fp32) และการ์ดรุ่นเก่าอย่าง GTX 16xx ไม่รองรับ</td></tr>
+      <tr><td><b>TF32</b></td><td>คูณเมทริกซ์ fp32 เร็วขึ้นบนการ์ด Ampere ขึ้นไป</td><td>ความละเอียดลดลงเล็กน้อย</td></tr>
+      <tr><td><b>cuDNN benchmark</b></td><td>ทดลองหาอัลกอริทึม convolution ที่เร็วที่สุดครั้งแรก แล้วใช้ต่อ ได้ผลเพราะภาพมีขนาด 224×224 เท่ากันทุกภาพ</td><td>ผลไม่ deterministic 100% รันซ้ำอาจต่างเล็กน้อย</td></tr>
+    </tbody>
+  </table></div>
+  <div class="vs">
+    <div><span class="t">ทำไมเลือก</span><ul>
+      <li>LR 1e-4 เท่ากับตัวอย่าง Adam ในเอกสารทั้ง DLMed-10 และ DLMed-12 และเล็กพอที่จะไม่ทำลายน้ำหนัก ImageNet</li>
+      <li>Cosine เป็นแบบต่อเนื่องของการลด LR แบบขั้นบันไดในตัวอย่าง smp (ลดเป็น 1e-5 ที่ epoch 25)</li>
+      <li>bf16 + TF32 + cuDNN benchmark ทำให้เทรน 30 epoch บนการ์ดโน้ตบุ๊ก (RTX 4050) จบได้ในเวลาที่รับได้</li>
+    </ul></div>
+    <div><span class="t">ทางเลือกที่ไม่ได้เลือก</span><ul>
+      <li><b>SGD + momentum 0.9:</b> ตัวอย่างหลักในเอกสาร มักได้ผลดีเมื่อจูน LR ดี แต่ไวต่อ LR มากกว่า</li>
+      <li><b>Adam ธรรมดา:</b> weight decay ปนกับ gradient (L2 แบบผิดวิธี)</li>
+      <li><b>StepLR / ReduceLROnPlateau:</b> ต้องเลือกจุดลดหรือ patience เอง</li>
+      <li><b>fp16 + GradScaler:</b> ใช้ได้บนการ์ดเก่า แต่ต้องจัดการ overflow</li>
+      <li><b>Early stopping:</b> ไม่ได้ใช้ (เทรนครบ 30 epoch แต่เก็บ checkpoint ที่ดีที่สุดแทน)</li>
+    </ul></div>
+  </div>
+  <p class="ref">อ้างอิง: <b>DLMed-10</b> น.38–40, 80 (SGD momentum 0.9, Adam lr 0.0001) · น.49 (สูตร gradient descent) · <b>DLMed-12</b> น.91 (Adam lr 1e-4) · น.94 (40 epoch ลด LR เป็น 1e-5 ที่ epoch 25) · <b>DLMed-08</b> น.34 (Adam lr 0.001 ไม่มี scheduler) · AdamW, Cosine, bf16, cuDNN benchmark ไม่อยู่ในเอกสาร ดู<a href="#outside">หัวข้อสุดท้าย</a></p>
+  <div class="risk"><b>คำถามที่อาจโดนถาม:</b> "รันซ้ำได้ผลเท่าเดิมไหม" ไม่แน่นอน 100% เพราะ train.py ตั้ง seed เฉพาะการแบ่งข้อมูล (ไม่ได้ตั้ง seed ให้ torch และ augmentation) และเปิด cuDNN benchmark ผลรันซ้ำจึงต่างได้เล็กน้อย</div>
+</section>
+
+<!-- 9 SELECT -->
+<section id="select" class="comp">
+  <div class="head">
+    <div class="chips"><span class="chip">หัวข้อ 9</span><span class="chip plain">train.py</span></div>
+    <h2>การเลือก Checkpoint ด้วยคะแนนรวมบน Validation</h2>
+    <p class="pick">เลือก: บันทึกเมื่อ (Val mIoU + Val Breed Macro F1) ÷ 2 สูงกว่าเดิม · ได้ epoch 10 คะแนน 0.8856</p>
+  </div>
+  <div class="vs">
+    <div><span class="t">ทำไมเลือก</span><ul>
+      <li>ขยายจากวิธีในเอกสาร (เก็บโมเดลที่ Val IoU ดีที่สุด) ให้ครอบคลุม 2 งานหลัก</li>
+      <li>ไม่รวม Species เพราะสูงเกือบ 99% ตั้งแต่ต้น ใส่ไปก็แทบไม่ช่วยตัดสิน</li>
+      <li>ใช้ Val ไม่ใช้ Test จึงไม่รั่ว</li>
+    </ul></div>
+    <div><span class="t">ทางเลือกที่ไม่ได้เลือก</span><ul>
+      <li><b>ใช้ epoch สุดท้าย:</b> ไม่ต้องเลือก แต่เสี่ยงถ้าช่วงท้าย overfit</li>
+      <li><b>ใช้ Val loss ต่ำสุด:</b> loss รวมขึ้นกับ λ จึงเทียบข้ามรูปแบบไม่ได้</li>
+      <li><b>เฉลี่ยน้ำหนักหลาย epoch (<a class="ext" href="https://arxiv.org/abs/1803.05407" target="_blank" rel="noopener">SWA</a>/EMA):</b> นิ่งกว่า แต่เพิ่มขั้นตอน</li>
+    </ul></div>
+  </div>
+  <p class="ref">อ้างอิง: <b>DLMed-12</b> น.94 (บันทึกโมเดลเมื่อ val <code>iou_score</code> ดีกว่าค่าสูงสุดเดิม) · <b>DLMed-10</b> น.56 (บันทึกโมเดลหลังเทรนด้วย <code>torch.save</code>)</p>
+  <div class="risk"><b>คำถามที่อาจโดนถาม:</b> "ทำไม epoch 10 ดีที่สุด แล้วอีก 20 epoch ทำอะไร" คะแนนรวมที่ epoch 10 สูงเพราะ Breed F1 กระโดดเป็น 0.9526 ขณะที่ mIoU ยังขึ้นต่อเล็กน้อยจนถึง 0.8217 ที่ epoch 26 Val มีราว 20 ภาพต่อสายพันธุ์ ภาพเดียวทำให้ recall ของสายพันธุ์นั้นขยับ 5% การเลือก epoch จึงมีสัญญาณรบกวน epoch 11–30 ได้คะแนนรวม 0.872–0.883 รอบที่ดีที่สุดต่ำกว่า epoch 10 แค่ 0.003</div>
+</section>
+
+<!-- 10 METRICS -->
+<section id="metrics" class="comp">
+  <div class="head">
+    <div class="chips"><span class="chip">หัวข้อ 10</span><span class="chip plain">จุดเด่น · ตัวชี้วัดครบถ้วน</span><span class="chip plain">utils/metrics.py</span></div>
+    <h2>ตัวชี้วัด: แต่ละตัววัดอะไร และค่าของเราเท่าไร</h2>
+    <p class="pick">ทุกค่าวัดบน Test 3,669 ภาพ ที่ความละเอียด 224×224 · IoU และ Dice คิดแบบรวมพิกเซลทั้งชุดก่อนหาร (dataset-level)</p>
+  </div>
+<div class="mathbox">
+$$\text{IoU}_c = \frac{TP}{TP+FP+FN} \qquad \text{mIoU} = \frac{1}{3}\sum_{c}\text{IoU}_c \qquad \text{Dice}_c = \frac{2\,TP}{2\,TP+FP+FN} = \frac{2\,\text{IoU}_c}{1+\text{IoU}_c}$$
+$$\text{Precision} = \frac{TP}{TP+FP} \qquad \text{Recall} = \frac{TP}{TP+FN} \qquad F_1 = \frac{2PR}{P+R} \qquad \text{Macro-}F_1 = \frac{1}{K}\sum_{k=1}^{K} F_{1,k}$$
+<p>TP = ทายเป็นคลาส c และถูก · FP = ทายเป็น c แต่ผิด · FN = เป็น c จริงแต่ทายเป็นอื่น · IoU/Dice ในงานนี้นับ TP/FP/FN รวมทุกพิกเซลของ test ทั้งชุดก่อนหาร</p>
+</div>
+  <div class="tbl"><table>
+    <thead><tr><th>ตัวชี้วัด</th><th>งาน</th><th>ค่า</th><th>ทำไมต้องมี</th></tr></thead>
+    <tbody>
+      <tr><td>mIoU</td><td>Segmentation</td><td class="num">0.8266</td><td>ตัวชี้วัดมาตรฐานของ segmentation ลงโทษทั้งระบายเกินและระบายขาด</td></tr>
+      <tr><td>Mean Dice</td><td>Segmentation</td><td class="num">0.8987</td><td>นิยมในงานภาพทางการแพทย์ และเท่ากับ F1 ระดับพิกเซล</td></tr>
+      <tr><td>IoU รายคลาส</td><td>Segmentation</td><td class="num">0.947 / 0.896 / 0.637</td><td>ค่าเฉลี่ยซ่อนว่าคลาสขอบแย่กว่ามาก ต้องดูแยก</td></tr>
+      <tr><td>Accuracy</td><td>Breed · Species</td><td class="num">91.69% · 99.51%</td><td>เข้าใจง่ายที่สุด ใช้ได้ดีเมื่อคลาสสมดุล (สายพันธุ์สมดุล ~100 ภาพต่อคลาสใน test)</td></tr>
+      <tr><td>Macro Precision / Recall</td><td>Breed</td><td class="num">91.88% / 91.65%</td><td>แยกว่าโมเดล "ตอบเกิน" หรือ "หาไม่เจอ"</td></tr>
+      <tr><td>Macro F1</td><td>Breed · Species</td><td class="num">91.54% · 99.44%</td><td>ทุกคลาสมีน้ำหนักเท่ากัน สำคัญกับ Species ที่หมามากกว่าแมว 2 เท่า</td></tr>
+      <tr><td>Confusion Matrix</td><td>Breed · Species</td><td>ภาพ</td><td>บอกว่าผิด <b>เป็นอะไร</b> ไม่ใช่แค่ผิดกี่ภาพ ใช้หาคู่ที่สับสน</td></tr>
+    </tbody>
+  </table></div>
+  <div class="vs">
+    <div><span class="t">ทำไมเลือกชุดนี้</span><ul>
+      <li>ตรงกับตัวอย่างตัวชี้วัดในเกณฑ์: Classification ใช้ Precision / Recall / F1 และ Segmentation ใช้ Dice / IoU</li>
+      <li>smp ในเอกสารการสอนก็รายงาน F1, IoU, accuracy, precision, recall ชุดเดียวกัน</li>
+      <li>เพิ่ม macro, รายคลาส และ confusion matrix เพื่อการวิเคราะห์ ซึ่งเกินกว่าเอกสาร</li>
+    </ul></div>
+    <div><span class="t">ทางเลือกที่ไม่ได้ใช้</span><ul>
+      <li><b>Pixel accuracy:</b> พื้นหลังเยอะทำให้ค่าสูงหลอกตา</li>
+      <li><b>IoU เฉลี่ยรายภาพ:</b> สะท้อนภาพยากได้ดีกว่า แต่ค่าจะต่างจาก dataset-level</li>
+      <li><b>Hausdorff distance / Boundary F1:</b> วัดคุณภาพขอบโดยตรง แต่คำนวณหนักกว่า</li>
+      <li><b>Top-5 accuracy, ROC-AUC:</b> ไม่ได้รายงาน</li>
+    </ul></div>
+  </div>
+  <p class="ref">อ้างอิง: <b>DLMed-12</b> น.92, 95 (smp metrics: F1, IoU, accuracy, precision, recall) · <b>DLMed-10</b> น.58, 82 (accuracy, <code>model.eval()</code> + <code>torch.no_grad()</code>) · Project 2 Instruction (ตัวอย่างตัวชี้วัด)</p>
+  <div class="risk"><b>คำถามที่อาจโดนถาม:</b> "IoU 0.637 ของขอบต่ำ โมเดลแย่ไหม" ไม่ใช่ เพราะชุดข้อมูลระบุว่าบริเวณนี้คือ "Not classified" คือจุดที่คนทำเฉลยก็ไม่แน่ใจ และเป็นแถบบางที่คลาดไป 1–2 พิกเซลก็เสีย IoU มาก ค่าที่เทียบกับงานอื่นได้คือ IoU ของตัวสัตว์ 0.896</div>
+</section>
+
+<!-- OUTSIDE -->
+<section id="outside">
+  <div class="sh"><h2>สิ่งที่ใช้แต่ไม่อยู่ในเอกสารการสอน</h2></div>
+  <div class="prose"><p>เตรียมไว้ตอบเมื่อกรรมการถามว่า "เรียนมาจากไหน" ทุกข้อเป็นเทคนิคมาตรฐานที่มีงานวิจัยรองรับ</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th>เทคนิค</th><th>ที่มา</th><th>ใช้ใน</th></tr></thead>
+    <tbody>
+      <tr><td>AdamW</td><td><a class="ext" href="https://arxiv.org/abs/1711.05101" target="_blank" rel="noopener">Loshchilov &amp; Hutter, "Decoupled Weight Decay Regularization", ICLR 2019</a></td><td>train.py</td></tr>
+      <tr><td>Cosine Annealing</td><td><a class="ext" href="https://arxiv.org/abs/1608.03983" target="_blank" rel="noopener">Loshchilov &amp; Hutter, "SGDR", ICLR 2017</a></td><td>train.py</td></tr>
+      <tr><td>Label Smoothing</td><td><a class="ext" href="https://arxiv.org/abs/1512.00567" target="_blank" rel="noopener">Szegedy et al., "Rethinking the Inception Architecture", CVPR 2016</a></td><td>utils/losses.py</td></tr>
+      <tr><td>Soft Dice Loss</td><td><a class="ext" href="https://arxiv.org/abs/1606.04797" target="_blank" rel="noopener">Milletari et al., "V-Net", 3DV 2016</a></td><td>utils/losses.py</td></tr>
+      <tr><td>Multi-task Learning</td><td><a class="ext" href="https://doi.org/10.1023/A:1007379606734" target="_blank" rel="noopener">Caruana, "Multitask Learning", Machine Learning 1997</a> · <a class="ext" href="https://arxiv.org/abs/1706.05098" target="_blank" rel="noopener">Ruder, "An Overview of Multi-Task Learning", 2017</a></td><td>models/multitask_model.py</td></tr>
+      <tr><td>λ อัตโนมัติ (งานต่อยอด)</td><td><a class="ext" href="https://arxiv.org/abs/1705.07115" target="_blank" rel="noopener">Kendall et al., "Multi-Task Learning Using Uncertainty to Weigh Losses", CVPR 2018</a></td><td>–</td></tr>
+      <tr><td>Mixed precision / bfloat16</td><td><a class="ext" href="https://arxiv.org/abs/1710.03740" target="_blank" rel="noopener">Micikevicius et al., "Mixed Precision Training", ICLR 2018</a> · <a class="ext" href="https://pytorch.org/docs/stable/amp.html" target="_blank" rel="noopener">เอกสาร PyTorch <code>torch.autocast</code></a></td><td>train.py</td></tr>
+      <tr><td>U-Net · ResNet</td><td><a class="ext" href="https://arxiv.org/abs/1505.04597" target="_blank" rel="noopener">Ronneberger et al., MICCAI 2015</a> · <a class="ext" href="https://arxiv.org/abs/1512.03385" target="_blank" rel="noopener">He et al., CVPR 2016</a></td><td>models/</td></tr>
+      <tr><td>ชุดข้อมูล</td><td><a class="ext" href="https://www.robots.ox.ac.uk/~vgg/publications/2012/parkhi12a/parkhi12a.pdf" target="_blank" rel="noopener">Parkhi et al., "Cats and Dogs", CVPR 2012</a></td><td>data/</td></tr>
+    </tbody>
+  </table></div>
+</section>
+
+<footer>ที่มา: ซอร์สโค้ดใน repo นี้ · เอกสารประกอบการสอน DLMed-08, DLMed-10, DLMed-12 · ตัวเลขผลลัพธ์จาก notebook และ checkpoint <code>best_model_resnet50.pth</code></footer>
+
+</main>
+</div>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="assets/math.js"></script>
+</body>
+</html>

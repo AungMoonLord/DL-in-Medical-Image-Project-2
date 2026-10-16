@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Know the Dataset</title>
+<meta name="description" content="ทำความรู้จักชุดข้อมูล Oxford-IIIT Pet: ตัวเลขสำคัญ ลักษณะภาพ สายพันธุ์ที่ยาก แคตตาล็อก 37 สายพันธุ์ และสายพันธุ์นอกชุดข้อมูลที่หน้าคล้าย">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js"></script>
+</head>
+<body>
+
+<nav class="topnav" aria-label="เมนูหลัก"><div class="in">
+  <a class="brand" href="../index.html"><span class="tristrip" aria-hidden="true"><i style="background:var(--tri-bg)"></i><i style="background:var(--tri-pet)"></i><i style="background:var(--tri-edge)"></i></span>Pet Multi-task</a>
+  <ul>
+    <li><a href="../index.html">ภาพรวม</a></li>
+    <li><a href="data.html" aria-current="page">ทำความรู้จักข้อมูล</a></li>
+    <li><a href="components.html">เจาะลึกองค์ประกอบ</a></li>
+    <li><a href="qa.html">คำถามที่คาดว่าจะเจอ</a></li>
+  </ul>
+  <div class="tools">
+    <button class="themebtn icon" type="button" aria-label="สลับโหมดมืดหรือสว่าง">☾</button>
+    <a class="cta" href="inference.html">▶ ทดลองโมเดล</a>
+  </div>
+</div></nav>
+
+<div class="wrap">
+
+<nav class="toc" aria-label="สารบัญ">
+  <div class="lbl">ในหน้านี้</div>
+  <ol>
+    <li><a href="#numbers">ตัวเลขสำคัญ</a></li>
+    <li><a href="#labels">ป้ายกำกับมีอะไรบ้าง</a></li>
+    <li><a href="#images">ลักษณะของภาพ</a></li>
+    <li><a href="#perf">สายพันธุ์ไหนยาก</a></li>
+    <li><a href="#hard">อะไรทำให้ยาก</a></li>
+    <li><a href="#groups">กลุ่มที่หน้าคล้ายกัน</a></li>
+    <li><a href="#catalogue">แคตตาล็อก 37 สายพันธุ์</a></li>
+    <li><a href="#outside">สายพันธุ์นอกชุดข้อมูล</a></li>
+    <li><a href="#sources">แหล่งอ้างอิง</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <div class="tristrip" aria-hidden="true"><i style="background:var(--tri-bg)"></i><i style="background:var(--tri-pet)"></i><i style="background:var(--tri-edge)"></i></div>
+  <div class="eyebrow">Data Understanding · Oxford-IIIT Pet</div>
+  <h1>รู้จักข้อมูลก่อน แล้วจะเข้าใจว่าโมเดลพลาดเพราะอะไร</h1>
+  <p class="lede">ชุดข้อมูล <a class="ext" href="https://www.robots.ox.ac.uk/~vgg/data/pets/" target="_blank" rel="noopener">Oxford-IIIT Pet</a> สร้างโดยกลุ่ม Visual Geometry Group มหาวิทยาลัยอ็อกซ์ฟอร์ด ร่วมกับ IIIT Hyderabad (<a class="ext" href="https://www.robots.ox.ac.uk/~vgg/publications/2012/parkhi12a/parkhi12a.pdf" target="_blank" rel="noopener">Parkhi et al., CVPR 2012</a>) เป็นภาพถ่ายหมาแมวจากอินเทอร์เน็ต 37 สายพันธุ์ ทุกภาพมีป้ายสายพันธุ์และ trimap ระดับพิกเซล</p>
+</header>
+
+<!-- NUMBERS -->
+<section id="numbers">
+  <div class="sh"><h2>ตัวเลขสำคัญ</h2></div>
+  <div class="stats">
+    <div class="stat"><span class="k">7,349</span><span class="l">ภาพที่มีป้ายกำกับ (ตาม list.txt)</span></div>
+    <div class="stat"><span class="k">37</span><span class="l">สายพันธุ์ · แมว 12 หมา 25</span></div>
+    <div class="stat"><span class="k">~200</span><span class="l">ภาพต่อสายพันธุ์ (น้อยสุด 184)</span></div>
+    <div class="stat"><span class="k">2.1 : 1</span><span class="l">หมา : แมว (4,978 : 2,371)</span></div>
+  </div>
+  <div class="chart" id="chSplit">
+    <h3>จำนวนภาพในแต่ละชุด แยกแมวและหมา</h3>
+    <p class="sub">ชุด test ทางการใหญ่พอ ๆ กับ trainval และสัดส่วนหมา:แมวเท่ากันทั้งสองชุด</p>
+    <div class="lg"><span><i class="sq" style="background:var(--s-cat)"></i>แมว</span><span><i class="sq" style="background:var(--s-dog)"></i>หมา</span></div>
+    <div class="plot"></div>
+  </div>
+  <p class="muted">สายพันธุ์ส่วนใหญ่มี 100 ภาพใน trainval และ 100 ภาพใน test ที่มีน้อยกว่าคือ Bombay (96 + 88), Egyptian Mau (93 + 97), Staffordshire Bull Terrier (100 + 89), English Cocker Spaniel (96 + 100), Newfoundland (96 + 100) และ Abyssinian (100 + 98) ความต่างนี้เล็กพอที่ไม่ต้องถ่วงน้ำหนักคลาส trainval ถูกแบ่งต่อเป็น Train 2,944 / Val 736 แบบ stratified</p>
+</section>
+
+<!-- LABELS -->
+<section id="labels">
+  <div class="sh"><h2>ป้ายกำกับมีอะไรบ้าง</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th>ป้าย</th><th>อยู่ที่ไหน</th><th>ค่าที่เป็นไปได้</th><th>ใช้ในงานนี้</th></tr></thead>
+    <tbody>
+      <tr><td>สายพันธุ์</td><td><code>annotations/list.txt</code> และชื่อไฟล์</td><td>CLASS-ID 1–37 · ชื่อไฟล์ เช่น <code>Bengal_12.jpg</code></td><td>✓ หัวทายสายพันธุ์</td></tr>
+      <tr><td>หมาหรือแมว</td><td><code>list.txt</code> คอลัมน์ SPECIES</td><td>1 = แมว, 2 = หมา · ชื่อไฟล์ขึ้นต้นตัวใหญ่ = แมว ตัวเล็ก = หมา</td><td>✓ หัวทายหมาแมว (แปลงเป็น 0 = แมว, 1 = หมา)</td></tr>
+      <tr><td>Trimap</td><td><code>annotations/trimaps/*.png</code></td><td>1 = ตัวสัตว์, 2 = พื้นหลัง, 3 = ไม่ระบุ (ขอบ)</td><td>✓ แปลงเป็น 0 = พื้นหลัง, 1 = ตัวสัตว์, 2 = ขอบ</td></tr>
+      <tr><td>กรอบหัว (Head ROI)</td><td><code>annotations/xmls/*.xml</code> แบบ PASCAL VOC</td><td>bounding box ของหัวสัตว์ · มีเฉพาะภาพ trainval (3,686 ไฟล์)</td><td>✗ ไม่ได้ใช้ (ใช้ทำงาน detection ต่อได้)</td></tr>
+    </tbody>
+  </table></div>
+  <div class="trikey">
+    <span><i style="background:var(--tri-bg)"></i>พื้นหลัง</span>
+    <span><i style="background:var(--tri-pet)"></i>ตัวสัตว์</span>
+    <span><i style="background:var(--tri-edge)"></i>ขอบ (ค่า 3 = "Not classified" คนทำเฉลยไม่แน่ใจ)</span>
+  </div>
+  <figure>
+    <div class="paper"><img src="assets/img/dataset_samples.jpg" alt="ภาพตัวอย่าง 4 ภาพจากชุดข้อมูล แถวบนเป็นภาพจริง แถวล่างเป็น trimap 3 สี" loading="lazy"></div>
+    <figcaption>ภาพจริงกับ trimap ที่ใช้เป็นเฉลย สังเกตว่าแถบขอบสีเหลืองบางมาก</figcaption>
+  </figure>
+</section>
+
+<!-- IMAGES -->
+<section id="images">
+  <div class="sh"><h2>ลักษณะของภาพ</h2></div>
+  <div class="charts2">
+    <div class="chart" id="chLongest">
+      <h3>ด้านยาวที่สุดของภาพ (พิกเซล)</h3>
+      <p class="sub">ภาพส่วนใหญ่ถูกย่อมาแล้วให้ด้านยาวราว 500 พิกเซล การย่อเหลือ 224 จึงเหลือความละเอียดราว 45% ต่อด้าน</p>
+      <div class="plot"></div>
+    </div>
+    <div class="chart" id="chAspect">
+      <h3>สัดส่วนภาพ กว้าง ÷ สูง</h3>
+      <p class="sub">เส้นตั้งคือจัตุรัส (1.0) ภาพที่พบมากที่สุดคือแนวนอน 4:3 และ 3:2 รองลงมาคือแนวตั้ง 2:3 และ 3:4 ทุกภาพถูกบีบเป็นจัตุรัสก่อนเข้าโมเดล</p>
+      <div class="plot"></div>
+    </div>
+  </div>
+  <div class="chart" id="chPixels">
+    <h3>สัดส่วนพิกเซลแต่ละคลาสของ trimap (เฉลี่ยทุกภาพ)</h3>
+    <p class="sub">พื้นหลังมากกว่าขอบราว 5 เท่า และขอบเป็นแถบบาง จึงใส่ Dice loss ให้ทุกคลาสมีน้ำหนักเท่ากัน</p>
+    <div class="plot"></div>
+  </div>
+  <details class="tview"><summary>ดูเป็นตาราง</summary>
+    <div class="tbl"><table>
+      <thead><tr><th>คุณสมบัติ</th><th>ค่า</th><th>ผลต่อการออกแบบ</th></tr></thead>
+      <tbody id="imgStats"></tbody>
+    </table></div>
+  </details>
+</section>
+
+<!-- PERF -->
+<section id="perf">
+  <div class="sh"><h2>สายพันธุ์ไหนยาก: จำแนก vs ระบายสี</h2></div>
+  <div class="prose"><p>แต่ละจุดคือหนึ่งสายพันธุ์ แกนนอนคือ IoU ของตัวสัตว์ (ระบายสีดีแค่ไหน) แกนตั้งคือ F1 ของการทายสายพันธุ์ ทั้งหมดวัดบน test ชี้ที่จุดเพื่อดูตัวเลข และกดเพื่อเปิดรายละเอียดสายพันธุ์นั้น</p></div>
+  <div class="chart" id="chScatter">
+    <h3>ผลรายสายพันธุ์บน test</h3>
+    <div class="lg"><span><i style="background:var(--s-cat)"></i>แมว</span><span><i style="background:var(--s-dog)"></i>หมา</span><span>เส้นจาง = ค่ารวมทั้งชุด</span></div>
+    <div class="plot"></div>
+    <details class="tview"><summary>ดูเป็นตาราง</summary><div class="tbl"><table>
+      <thead><tr><th>สายพันธุ์</th><th>ชนิด</th><th>F1</th><th>Recall</th><th>Pet IoU</th></tr></thead><tbody id="perfTable"></tbody>
+    </table></div></details>
+  </div>
+  <div class="analogy"><b>อ่านกราฟนี้:</b> สองงานยากคนละจุด American Pit Bull กับ Staffordshire จำแนกยากที่สุดแต่ระบายสีได้ปกติ ส่วนหมาขนสั้นตัวผอมอย่าง German Shorthaired และ Miniature Pinscher ระบายสียากที่สุด (ขาเรียวและหูบาง) แต่จำแนกได้ดี</div>
+  <div class="chart" id="chPairs">
+    <h3>10 คู่ที่โมเดลทายสลับบ่อยที่สุด</h3>
+    <p class="sub">จำนวนภาพ test ที่สายพันธุ์จริง (ซ้าย) ถูกทายเป็นอีกสายพันธุ์ · ป้าย "ข้ามชนิด" คือแมวกับหมาสลับกัน</p>
+    <div class="plot"></div>
+  </div>
+</section>
+
+<!-- HARD -->
+<section id="hard">
+  <div class="sh"><h2>อะไรทำให้ชุดข้อมูลนี้ยาก</h2></div>
+  <ol class="limits">
+    <li><div><b>Fine-grained: ต่างกันที่รายละเอียดเล็ก ๆ</b><p class="muted">การแยกหมากับแมวง่าย (โมเดลได้ 99.5%) แต่การแยก 37 สายพันธุ์ต้องดูลายขน รูปหู สัดส่วนหน้า ซึ่งบางคู่ต่างกันน้อยมาก</p></div></li>
+    <li><div><b>สายพันธุ์เดียวกันหน้าตาต่างกันได้มาก</b><p class="muted">British Shorthair มีหลายสี หมาบางพันธุ์ตัดขนต่างกัน ลูกสัตว์กับตัวโตหน้าตาไม่เหมือนกัน ท่าทางและมุมกล้องหลากหลาย</p></div></li>
+    <li><div><b>ภาพถ่ายจริงจากอินเทอร์เน็ต</b><p class="muted">มีคน เฟอร์นิเจอร์ ของเล่น หรือสัตว์หลายตัวในภาพ บางภาพเห็นแค่หัว บางภาพเห็นทั้งตัว</p></div></li>
+    <li><div><b>ขอบกำกวมโดยธรรมชาติ</b><p class="muted">ขนยาว (Persian, Samoyed) หรือขนสีเดียวกับพื้นหลัง (Bombay, Newfoundland บนพื้นมืด) ทำให้ขอบตัวไม่ชัด ชุดข้อมูลจึงติดป้ายบริเวณนี้ว่า "ไม่ระบุ"</p></div></li>
+    <li><div><b>บางสายพันธุ์ต่างกันที่ขนาดตัว</b><p class="muted">American Pit Bull Terrier กับ Staffordshire Bull Terrier ต่างกันหลัก ๆ ที่ความสูงและน้ำหนัก ภาพเดี่ยวที่ไม่มีวัตถุอ้างอิงขนาดจึงแยกยาก</p></div></li>
+  </ol>
+</section>
+
+<!-- GROUPS -->
+<section id="groups">
+  <div class="sh"><h2>กลุ่มสายพันธุ์ที่หน้าตาคล้ายกัน</h2></div>
+  <div class="prose"><p>จัดกลุ่มตามลักษณะที่มองเห็นจากภาพ คอลัมน์ขวาคือจำนวนภาพ test ที่โมเดลทายสลับกันภายในกลุ่ม (นับทั้งสองทิศ) กดชื่อสายพันธุ์เพื่อดูรายละเอียด</p></div>
+  <div class="tbl"><table>
+    <thead><tr><th>กลุ่ม</th><th>สายพันธุ์</th><th>ลักษณะร่วม</th><th>วิธีแยก</th><th>ทายสลับใน test</th></tr></thead>
+    <tbody id="groupTable"></tbody>
+  </table></div>
+</section>
+
+<!-- CATALOGUE -->
+<section id="catalogue">
+  <div class="sh"><h2>แคตตาล็อก 37 สายพันธุ์</h2></div>
+  <div class="prose"><p>ภาพตัวอย่างทุกภาพมาจากชุด test ตัวเลขที่มุมขวาคือ F1 ของสายพันธุ์นั้น (สีแดงเมื่อต่ำกว่า 80%) กดที่ภาพเพื่อดูลักษณะเด่น ผลรายละเอียด และแหล่งอ้างอิง</p></div>
+  <div class="filters" role="group" aria-label="ตัวกรอง">
+    <button type="button" data-f="all" aria-pressed="true">ทั้งหมด</button>
+    <button type="button" data-f="cat" aria-pressed="false">แมว</button>
+    <button type="button" data-f="dog" aria-pressed="false">หมา</button>
+    <button type="button" data-s="name" aria-pressed="true">เรียงตามชื่อ</button>
+    <button type="button" data-s="f1" aria-pressed="false">F1 ต่ำสุดก่อน</button>
+    <button type="button" data-s="iou" aria-pressed="false">Pet IoU ต่ำสุดก่อน</button>
+    <input type="search" id="q" placeholder="ค้นหาชื่อสายพันธุ์ (ไทย/อังกฤษ)" aria-label="ค้นหาสายพันธุ์">
+  </div>
+  <div class="cat-grid" id="grid"></div>
+</section>
+
+<!-- OUTSIDE -->
+<section id="outside">
+  <div class="sh"><h2>สายพันธุ์นอกชุดข้อมูลที่หน้าคล้าย</h2></div>
+  <div class="prose">
+    <p>โมเดลรู้จักแค่ 37 สายพันธุ์ ถ้าเจอสายพันธุ์อื่นจะทายเป็นหนึ่งใน 37 สายพันธุ์เสมอ (closed-set) รายการนี้ใช้เตรียมภาพสาธิตและตอบคำถามว่า "ถ้าเป็นสายพันธุ์อื่นจะเกิดอะไรขึ้น" แต่ละการ์ดบอกว่าน่าจะถูกทายเป็นสายพันธุ์ไหน รวมสายพันธุ์ไทย 4 สายพันธุ์</p>
+  </div>
+  <div class="filters" role="group" aria-label="ตัวกรองสายพันธุ์นอกชุดข้อมูล">
+    <button type="button" data-rf="all" aria-pressed="true">ทั้งหมด</button>
+    <button type="button" data-rf="cat" aria-pressed="false">แมว</button>
+    <button type="button" data-rf="dog" aria-pressed="false">หมา</button>
+    <button type="button" data-rf="th" aria-pressed="false">สายพันธุ์ไทย</button>
+  </div>
+  <div class="refs" id="refs"></div>
+  <p class="muted">ความคล้ายในรายการนี้ประเมินจากลักษณะที่มองเห็น ยังไม่ได้ทดสอบกับโมเดล ยกเว้น Akita ที่มีผลใน notebook ใช้หน้า <a href="inference.html">ทดลองโมเดล</a> ลองกับภาพจริงได้</p>
+</section>
+
+<!-- SOURCES -->
+<section id="sources">
+  <div class="sh"><h2>แหล่งอ้างอิง</h2></div>
+  <div class="tbl"><table>
+    <thead><tr><th>ข้อมูล</th><th>แหล่ง</th></tr></thead>
+    <tbody>
+      <tr><td>ชุดข้อมูล ป้ายกำกับ และการแบ่ง trainval/test</td><td><a class="ext" href="https://www.robots.ox.ac.uk/~vgg/data/pets/" target="_blank" rel="noopener">Oxford VGG · The Oxford-IIIT Pet Dataset</a> · <a class="ext" href="https://www.robots.ox.ac.uk/~vgg/publications/2012/parkhi12a/parkhi12a.pdf" target="_blank" rel="noopener">Parkhi et al., "Cats and Dogs", CVPR 2012</a> · ไฟล์ <code>annotations/README</code></td></tr>
+      <tr><td>ลักษณะสายพันธุ์หมา</td><td><a class="ext" href="https://www.akc.org/dog-breeds/" target="_blank" rel="noopener">American Kennel Club (AKC)</a> · <a class="ext" href="https://www.ukcdogs.com/" target="_blank" rel="noopener">United Kennel Club (UKC)</a> สำหรับ American Bulldog และ American Pit Bull Terrier ที่ AKC ไม่รับขึ้นทะเบียน</td></tr>
+      <tr><td>ลักษณะสายพันธุ์แมว</td><td><a class="ext" href="https://cfa.org/" target="_blank" rel="noopener">The Cat Fanciers' Association (CFA)</a></td></tr>
+      <tr><td>ต้นกำเนิดและประวัติ</td><td>Wikipedia ภาษาอังกฤษ (ลิงก์รายสายพันธุ์อยู่ในแผงรายละเอียดของแต่ละการ์ด)</td></tr>
+      <tr><td>สถิติภาพ ผลรายสายพันธุ์ และภาพตัวอย่าง</td><td>คำนวณจากชุดข้อมูลและ checkpoint <code>best_model_resnet50.pth</code> บน test ทางการ (ดู <code>docs/REVIEW.md</code>)</td></tr>
+    </tbody>
+  </table></div>
+  <p class="muted">ตรวจลิงก์ทุกลิงก์เมื่อ 16 ต.ค. 2026 · สรุปลักษณะเป็นภาษาไทยโดยทีม ไม่ได้แปลตรงจากต้นฉบับ</p>
+</section>
+
+<footer>ข้อมูล: Oxford-IIIT Pet Dataset · ผลรายสายพันธุ์จาก checkpoint <code>best_model_resnet50.pth</code> (epoch 10)</footer>
+
+</main>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside class="drawer" id="drawer" aria-label="รายละเอียดสายพันธุ์" aria-hidden="true" tabindex="-1"></aside>
+<div class="ctip" id="tip" hidden></div>
+
+<script src="assets/data/breeds.js"></script>
+<script src="assets/data/breed_stats.js"></script>
+<script src="assets/data-page.js"></script>
+</body>
+</html>

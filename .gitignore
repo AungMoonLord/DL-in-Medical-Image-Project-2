@@ -1,0 +1,34 @@
+# --- Python ---
+__pycache__/
+*.py[cod]
+*.egg-info/
+.ipynb_checkpoints/
+
+# --- Virtual environments ---
+venv/
+.venv/
+env/
+
+# --- Dataset (download separately; keep the link note) ---
+data_cache/*
+!data_cache/*.txt
+*.tar.gz
+
+# --- Model weights (download separately; keep the link note) ---
+checkpoints/*
+!checkpoints/*.txt
+*.pth
+*.pt
+*.onnx
+*.onnx.data
+
+# --- Generated outputs (examples live in examples/*.zip) ---
+outputs/*
+!outputs/.gitkeep
+
+# --- Editors / OS ---
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+desktop.ini

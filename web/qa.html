@@ -1,0 +1,248 @@
+<!doctype html>
+<html lang="th">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Expected Questions</title>
+<meta name="description" content="คำถามที่คาดว่าจะเจอหลังนำเสนอ พร้อมแนวคำตอบและเคล็ดลับ แบ่งเป็น 5 หมวด">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Mitr:wght@400;500;600&family=IBM+Plex+Sans+Thai:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.css">
+<link rel="stylesheet" href="assets/site.css">
+<script src="assets/site.js"></script>
+</head>
+<body>
+
+<nav class="topnav" aria-label="เมนูหลัก"><div class="in">
+  <a class="brand" href="../index.html"><span class="tristrip" aria-hidden="true"><i style="background:var(--tri-bg)"></i><i style="background:var(--tri-pet)"></i><i style="background:var(--tri-edge)"></i></span>Pet Multi-task</a>
+  <ul>
+    <li><a href="../index.html">ภาพรวม</a></li>
+    <li><a href="data.html">ทำความรู้จักข้อมูล</a></li>
+    <li><a href="components.html">เจาะลึกองค์ประกอบ</a></li>
+    <li><a href="qa.html" aria-current="page">คำถามที่คาดว่าจะเจอ</a></li>
+  </ul>
+  <div class="tools">
+    <button class="themebtn icon" type="button" aria-label="สลับโหมดมืดหรือสว่าง">☾</button>
+    <a class="cta" href="inference.html">▶ ทดลองโมเดล</a>
+  </div>
+</div></nav>
+
+<div class="wrap">
+
+<nav class="toc" aria-label="สารบัญ">
+  <div class="lbl">ในหน้านี้</div>
+  <ol>
+    <li><a href="#how">หลักการตอบ</a></li>
+    <li><a href="#qa-data">โจทย์และข้อมูล</a></li>
+    <li><a href="#qa-model">โมเดล</a></li>
+    <li><a href="#qa-train">การเทรน</a></li>
+    <li><a href="#qa-results">ผลลัพธ์และการวิเคราะห์</a></li>
+    <li><a href="#qa-use">การนำไปใช้และวิชานี้</a></li>
+  </ol>
+</nav>
+
+<main>
+
+<header class="hero">
+  <div class="tristrip" aria-hidden="true"><i style="background:var(--tri-bg)"></i><i style="background:var(--tri-pet)"></i><i style="background:var(--tri-edge)"></i></div>
+  <div class="eyebrow">Q&amp;A · การนำเสนอและตอบคำถาม 3 คะแนน</div>
+  <h1>คำถามที่คาดว่าจะเจอ และแนวคำตอบ</h1>
+  <p class="lede">รวบรวมจากจุดที่กรรมการน่าจะสงสัย จุดอ่อนที่เรารู้อยู่แล้ว และเรื่องที่เอกสารประกอบการสอนเน้น กดที่คำถามเพื่อดูแนวคำตอบ ส่วน "เคล็ดลับ" คือสิ่งที่ควรพูดเพิ่มหรือควรระวัง</p>
+</header>
+
+<section id="how">
+  <div class="howto">
+    <span class="t">หลักการตอบ</span>
+    <ul>
+      <li>ตอบตรงคำถามก่อนในประโยคแรก แล้วค่อยให้เหตุผล</li>
+      <li>ยกตัวเลขจากงานจริงทุกครั้งที่ทำได้ ตัวเลขทั้งหมดในหน้านี้ตรวจซ้ำจาก checkpoint แล้ว</li>
+      <li>ถ้าเป็นจุดที่ไม่ได้ทดลอง ให้บอกตรง ๆ ว่ายังไม่ได้ทดลอง แล้วเสนอวิธีทดสอบ</li>
+      <li>เหตุผลเชิงลึกของแต่ละองค์ประกอบอยู่ในหน้า <a href="components.html">เจาะลึกองค์ประกอบ</a></li>
+    </ul>
+  </div>
+  <div class="row">
+    <button class="btn ghost" type="button" id="openAll">เปิดทุกข้อ</button>
+    <button class="btn ghost" type="button" id="closeAll">ปิดทุกข้อ</button>
+  </div>
+</section>
+
+<section>
+  <div class="qa">
+    <div class="qa-group" id="qa-data">โจทย์และข้อมูล</div>
+
+    <details><summary>ทำไมต้องทำ Multi-task ในโมเดลเดียว ไม่แยก 3 โมเดล</summary><div class="a">
+      <p>เพราะทั้ง 3 งานต้องการ "ความเข้าใจภาพสัตว์" ชุดเดียวกัน การใช้ encoder ร่วมจึงประหยัดกว่าเกือบครึ่ง โมเดลเรามี 48.8 ล้านพารามิเตอร์ ถ้าแยก 3 โมเดลจะราว 95.8 ล้าน และต้องรัน encoder 3 รอบต่อภาพ</p>
+      <p>อีกเหตุผลคือ Multi-task เป็นประเภทงานที่ได้คะแนนความยากสูงสุด 4 คะแนน และเราประเมินแต่ละงานแยกกันตามเงื่อนไขของเกณฑ์</p>
+      <p class="tip">เคล็ดลับ: อย่าอ้างว่า Multi-task ทำให้แม่นขึ้น เพราะเราไม่มี single-task baseline มาเทียบ ให้พูดว่า "ประหยัดกว่า และได้ผลระดับเดียวกับงานทั่วไปที่ใช้ ResNet-50"</p>
+    </div></details>
+
+    <details><summary>ทำไมใช้ Test 3,669 ภาพ (50%) ซึ่งเยอะกว่าปกติ แทนที่จะเอาไปเทรนเพิ่ม</summary><div class="a">
+      <p>เป็นการแบ่งทางการของชุดข้อมูล (<a class="ext" href="https://www.robots.ox.ac.uk/~vgg/publications/2012/parkhi12a/parkhi12a.pdf" target="_blank" rel="noopener">Parkhi et al., 2012</a>) ใช้แบบเดียวกันทำให้ผลของเราเทียบกับงานอื่นได้ และไม่มีใครสงสัยว่าเราเลือก test ให้ง่าย</p>
+      <p>Test ขนาดใหญ่ทำให้ตัวเลขนิ่ง ความต่าง 1% เท่ากับราว 37 ภาพ ส่วนข้อมูลเทรน 2,944 ภาพ (ราว 80 ภาพต่อสายพันธุ์) เพียงพอเพราะเราใช้ transfer learning จาก ImageNet</p>
+    </div></details>
+
+    <details><summary>รับประกันได้อย่างไรว่าไม่มี Data Leakage</summary><div class="a">
+      <ul>
+        <li>Test มาจากรายชื่อ <code>test.txt</code> ทางการ ไม่ซ้ำกับ <code>trainval.txt</code> และไม่ถูกโหลดใน <code>train.py</code> เลย</li>
+        <li>Val แบ่งจาก trainval เท่านั้น และเป็นชุดเดียวที่ใช้เลือก checkpoint</li>
+        <li>Augmentation ทำเฉพาะ train ส่วน Val/Test ทำแค่ Resize + Normalize</li>
+        <li>ตาราง 3 รูปแบบบน test ใช้รายงานผลเท่านั้น Balanced ถูกกำหนดเป็นแบบหลักตั้งแต่ก่อนเทรน</li>
+      </ul>
+      <p class="tip">เคล็ดลับ: ถ้าถูกถามเรื่อง ImageNet ให้ยอมรับว่า ImageNet มีหมาแมวหลายสายพันธุ์ ช่วยให้ transfer learning ได้ผลดี แต่ไม่ใช่การรั่วของ test ของเรา</p>
+    </div></details>
+
+    <details><summary>ข้อมูลไม่สมดุลไหม แก้อย่างไร</summary><div class="a">
+      <ul>
+        <li><b>สายพันธุ์:</b> สมดุลดี ราว 200 ภาพต่อสายพันธุ์ (น้อยสุด Bombay 184 ภาพ) จึงใช้ CE ธรรมดาได้</li>
+        <li><b>หมา:แมว:</b> ราว 2.1 : 1 (4,978 : 2,371) จึงรายงาน Precision/Recall/F1 แยกรายคลาสและ Macro F1 ไม่ใช่ Accuracy อย่างเดียว</li>
+        <li><b>ระดับพิกเซล:</b> โดยเฉลี่ยพื้นหลังกินพื้นที่ 58% ตัวสัตว์ 30% ขอบแค่ 12% และเป็นแถบบางที่เรียนยาก จึงเพิ่ม Dice loss ที่ให้ทุกคลาสมีน้ำหนักเท่ากัน</li>
+      </ul>
+    </div></details>
+
+    <details><summary>คลาส "ขอบ" (Boundary) คืออะไร ทำไมต้องทำนายด้วย</summary><div class="a">
+      <p>ในไฟล์ trimap ค่า 3 คือ "Not classified" เป็นแถบรอบตัวสัตว์ที่คนทำเฉลยไม่แน่ใจว่าเป็นตัวสัตว์หรือพื้นหลัง เราเลือกทำนายเป็นคลาสที่ 3 เพื่อให้โมเดลเรียนรู้ว่าขอบอยู่ตรงไหน</p>
+      <p>ผลข้างเคียงคือ mIoU ถูกดึงลง (IoU ขอบ 0.637) บางงานวิจัยเลือกไม่คิดบริเวณนี้หรือรวมกับตัวสัตว์ ค่าที่เทียบกับงานอื่นได้ตรงกว่าจึงเป็น IoU ของตัวสัตว์ 0.896</p>
+    </div></details>
+
+    <div class="qa-group" id="qa-model">โมเดล</div>
+
+    <details><summary>ทำไมเลือก ResNet-50 ไม่ใช่ VGG, EfficientNet หรือ ViT</summary><div class="a">
+      <p>เอกสาร DLMed-08 ให้เลือก backbone จากความแม่น ความเร็ว และขนาด ResNet-50 อยู่จุดสมดุล ในกราฟของเอกสารได้ top-1 ราว 74.5% ที่เวลาประมวลผลราว 3.5 เท่าของ SqueezeNet ขณะที่ VGG แม่นน้อยกว่าและช้ากว่าเกือบ 2 เท่า</p>
+      <p>ResNet-50 มี 5 stage ที่ให้ feature หลายความละเอียดพอดีกับ skip connection ของ U-Net และมีน้ำหนัก ImageNet ใน torchvision พร้อมใช้ ส่วน EfficientNet และ ViT ยังไม่ได้ลอง เป็นงานต่อยอด</p>
+    </div></details>
+
+    <details><summary>ทำไมใช้ U-Net ไม่ใช่ DeepLab หรือ Mask R-CNN</summary><div class="a">
+      <p>U-Net ใช้ skip connection ส่งรายละเอียดจาก encoder ไปช่วย decoder ทำให้ขอบคม ซึ่งจำเป็นกับคลาสขอบที่เป็นแถบบาง และเป็นสถาปัตยกรรมหลักในบทเรียน segmentation (DLMed-12) ที่ออกแบบมาเพื่อภาพทางการแพทย์</p>
+      <p>DeepLab เด่นเรื่องบริบทหลายสเกล เหมาะกับฉากที่มีวัตถุหลายขนาด ภาพของเรามีสัตว์ตัวเดียวเป็นหลัก ส่วน Mask R-CNN เป็น instance segmentation ที่ต้องมีขั้นตรวจจับวัตถุก่อน ซับซ้อนเกินโจทย์</p>
+    </div></details>
+
+    <details><summary>Skip connection คืออะไร ถ้าไม่มีจะเกิดอะไรขึ้น</summary><div class="a">
+      <p>คือการนำ feature จาก encoder ระดับเดียวกันมาต่อกับ decoder ตอนขยายภาพ Encoder ย่อภาพจนเหลือ 7×7 รู้ว่า "อะไร" แต่ลืมว่า "อยู่ตรงไหน" skip connection ส่งข้อมูลตำแหน่งความละเอียดสูงกลับมา</p>
+      <p>ถ้าไม่มี decoder ต้องเดารายละเอียดจาก 7×7 อย่างเดียว ขอบจะเบลอเป็นก้อน (เราไม่ได้ทดลองตัด skip ออก แต่นี่คือผลที่บทความ U-Net และ DLMed-12 อธิบายไว้)</p>
+    </div></details>
+
+    <details><summary>หัวทายหมาแมวกับหัวทายสายพันธุ์ ตอบขัดกันได้ไหม</summary><div class="a">
+      <p>ขัดกันได้ในทางทฤษฎี เพราะโจทย์กำหนดให้สองหัวแยกกัน แต่ในทางปฏิบัติแทบไม่เกิด จาก test 3,669 ภาพ สองหัวตอบขัดกันแค่ <b>10 ภาพ (0.27%)</b> เพราะทั้งสองหัวรับ feature ชุดเดียวกันจาก encoder</p>
+      <p>กรณี Sphynx (แมว) ที่ถูกทายเป็น Chihuahua 12 ภาพ ตรวจซ้ำแล้วพบว่า <b>หัวหมาแมวก็ตอบ "หมา" ด้วยใน 10 ภาพ</b> คือผิดพร้อมกันทั้งสองหัว ไม่ใช่ตอบขัดกัน และ 10 ภาพนี้คือที่มาส่วนใหญ่ของแมว 16 ภาพที่หัวหมาแมวทายผิด แปลว่าปัญหาอยู่ที่ feature ร่วม (แมวไม่มีขน ตัวเล็ก หูใหญ่ ดูเหมือนหมา) ไม่ใช่ที่หัว</p>
+      <p>ถ้าอนุมานหมาแมวจากหัวสายพันธุ์แทน จะได้ 99.45% ใกล้เคียงหัวหมาแมว (99.51%) หน้า <a href="inference.html">ทดลองโมเดล</a> แสดงคำเตือนเมื่อสองหัวขัดกัน</p>
+      <p class="tip">เคล็ดลับ: notebook ส่วน 4.1 และหัวข้อ Confusion Matrix ด้านบนสรุปจากกรณี Sphynx ว่า "สองหัวไม่ได้ตรวจคำตอบกัน" ซึ่งข้อมูลไม่สนับสนุน ให้ใช้คำอธิบายในข้อนี้แทนเมื่อถูกถาม</p>
+    </div></details>
+
+    <div class="qa-group" id="qa-train">การเทรน</div>
+
+    <details><summary>Loss รวมกันอย่างไร และค่า λ มาจากไหน</summary><div class="a">
+      <p>\(\mathcal{L} = \lambda_{seg}(\mathcal{L}_{CE}+\mathcal{L}_{Dice}) + \lambda_{breed}\,\mathcal{L}_{CE}^{\,ls} + \lambda_{sp}\,\mathcal{L}_{CE}\) ค่าหลักคือ λ = 1.0 : 1.0 : 0.5 ตั้งจากเหตุผล ไม่ได้ค้นหาอัตโนมัติ งานหลักสองงานได้น้ำหนักเท่ากัน ส่วนหมาแมวง่ายและเรียนเสร็จเร็วจึงได้ครึ่งเดียว</p>
+      <p>เราทดลองเปลี่ยน λ 3 รูปแบบ ผลจาก checkpoint จริง: สองแบบที่ปรับ λ จำแนกสายพันธุ์ได้ดีกว่า Balanced 1.0–1.4 จุด (มีนัยสำคัญ) และ mIoU ต่ำกว่าเล็กน้อย 0.003–0.004 แต่ส่วนหนึ่งมาจาก epoch ที่ถูกเลือกต่างกัน (Balanced epoch 10, อีกสองแบบ epoch 27–28) ดูข้อ "ทำไมไม่เลือกแบบที่ผล test ดีกว่า"</p>
+      <p class="tip">เคล็ดลับ: ถ้าถูกถามว่าทำไมไม่ใช้ λ อัตโนมัติ ให้ตอบว่า Uncertainty weighting (<a class="ext" href="https://arxiv.org/abs/1705.07115" target="_blank" rel="noopener">Kendall et al., 2018</a>) เป็นงานต่อยอดที่วางแผนไว้</p>
+    </div></details>
+
+    <details><summary>ทำไมใส่ Dice loss เพิ่ม ใช้ Cross-Entropy อย่างเดียวไม่พอหรือ</summary><div class="a">
+      <p>CE คิดทุกพิกเซลเท่ากัน คลาสพื้นหลังที่มีพิกเซลมากจึงครอบงำ loss ส่วน Dice วัดสัดส่วนการทับซ้อนของแต่ละคลาสแล้วเฉลี่ย คลาสขอบที่เล็กจึงมีน้ำหนักเท่าพื้นหลัง DLMed-12 ระบุว่า Dice ช่วย "โดยเฉพาะเมื่อข้อมูลไม่สมดุล"</p>
+      <p>ใช้คู่กันเพราะ CE ให้ gradient นิ่งตั้งแต่ต้น ส่วน Dice อย่างเดียวมักแกว่งช่วงแรก</p>
+    </div></details>
+
+    <details><summary>Label smoothing คืออะไร ทำไมใช้กับสายพันธุ์อย่างเดียว</summary><div class="a">
+      <p>แทนที่จะบอกโมเดลว่าคำตอบถูกมั่นใจ 100% เราให้เป้าหมายเป็นราว 95% และกระจาย 5% ที่เหลือให้คลาสอื่น (\(y_{true} = 1-\varepsilon+\varepsilon/K \approx 0.951\), \(\varepsilon = 0.05,\ K = 37\)) โมเดลจึงไม่มั่นใจเกินเหตุ เหมาะกับสายพันธุ์ที่หน้าคล้ายกันจนคนยังแยกยาก เช่น American Pit Bull กับ Staffordshire</p>
+      <p>หมาแมวแยกง่ายและไม่กำกวม จึงไม่จำเป็น</p>
+    </div></details>
+
+    <details><summary>Checkpoint ที่ใช้มาจาก epoch 10 จาก 30 แล้วอีก 20 epoch เสียเปล่าไหม</summary><div class="a">
+      <p>เราเก็บ epoch ที่ (Val mIoU + Val Breed F1) ÷ 2 สูงสุด ซึ่งเป็น epoch 10 (0.8856) เพราะ Breed F1 บน Val กระโดดเป็น 0.9526 epoch 11–30 ได้ 0.872–0.883 รอบที่ดีที่สุดต่ำกว่า epoch 10 แค่ 0.003 และ mIoU ยังขึ้นช้า ๆ ถึง 0.8217</p>
+      <p>Val มีราว 20 ภาพต่อสายพันธุ์ ภาพเดียวเปลี่ยน recall ของสายพันธุ์นั้นได้ 5% การเลือก epoch จึงมีสัญญาณรบกวน ไม่ได้แปลว่าโมเดลแย่ลงหลัง epoch 10 ทางแก้คือใช้ Val ใหญ่ขึ้น หรือเฉลี่ยน้ำหนักหลาย epoch</p>
+    </div></details>
+
+    <details><summary>โมเดล Overfit ไหม ดูจากอะไร</summary><div class="a">
+      <p>ไม่เห็นสัญญาณชัด Val loss ลดจาก 1.67 แล้วนิ่งที่ราว 0.91–0.95 โดยไม่เด้งกลับขึ้น และ Val mIoU กับ F1 ไม่ลดลงช่วงท้าย</p>
+      <p>Train loss (0.60) ต่ำกว่า Val loss แต่เทียบตรง ๆ ไม่ได้ เพราะ train loss คิดขณะมี augmentation และ dropout ส่วนที่ช่วยกัน overfit คือ pretrained weights, augmentation, dropout, weight decay และ label smoothing</p>
+    </div></details>
+
+    <details><summary>bfloat16 คืออะไร ทำให้ความแม่นยำลดลงไหม</summary><div class="a">
+      <p>เป็นตัวเลข 16 บิตที่มีช่วงค่ากว้างเท่า fp32 แต่ทศนิยมน้อยกว่า ใช้ผ่าน <code>torch.autocast</code> เฉพาะตอนคำนวณ ส่วนน้ำหนักโมเดลยังเก็บเป็น fp32 จึงไม่กระทบความแม่นยำอย่างมีนัยสำคัญ แต่เร็วขึ้นและใช้ VRAM น้อยลง</p>
+      <p>ต่างจาก fp16 ที่ช่วงค่าแคบ ต้องใช้ GradScaler กัน gradient ล้น ส่วน bf16 ไม่ต้อง</p>
+    </div></details>
+
+    <details><summary>ถ้ารันเทรนใหม่จะได้ผลเท่าเดิมไหม</summary><div class="a">
+      <p>การแบ่งข้อมูลเหมือนเดิมทุกครั้ง (seed 42) แต่ผลเทรนอาจต่างเล็กน้อย เพราะยังไม่ได้ตั้ง seed ให้ PyTorch และ augmentation และเปิด cuDNN benchmark ไว้เพื่อความเร็ว</p>
+      <p>เพราะเหตุนี้ความต่างระหว่างรูปแบบที่เล็กมาก เช่น mIoU ต่างกัน 0.003–0.004 ควรยืนยันด้วยการเทรนหลาย seed แล้วรายงานค่าเฉลี่ย ± ส่วนเบี่ยงเบน การทดสอบแบบจับคู่ที่เราทำ (McNemar, bootstrap) บอกได้ว่าความต่างไม่ใช่ความบังเอิญจากการสุ่ม<b>ภาพ test</b> แต่ยังบอกไม่ได้ว่าไม่ใช่ความบังเอิญจากการสุ่ม<b>ตอนเทรน</b></p>
+    </div></details>
+
+    <div class="qa-group" id="qa-results">ผลลัพธ์และการวิเคราะห์</div>
+
+    <details><summary>ผล 91.7% ดีแค่ไหน เมื่อเทียบกับงานอื่น</summary><div class="a">
+      <p>บทความต้นฉบับของชุดข้อมูล (<a class="ext" href="https://www.robots.ox.ac.uk/~vgg/publications/2012/parkhi12a/parkhi12a.pdf" target="_blank" rel="noopener">Parkhi et al., 2012</a>) ได้ความแม่นจำแนก 37 สายพันธุ์ราว 59% ด้วยวิธีก่อนยุค deep learning ส่วนงานที่ fine-tune CNN สมัยใหม่ขนาดใกล้ ResNet-50 ที่ 224×224 มักได้ราว 88–93% (เช่น <a class="ext" href="https://arxiv.org/abs/1805.08974" target="_blank" rel="noopener">Kornblith et al., 2019</a>) ผลของเราจึงอยู่ในระดับที่คาดหวังได้</p>
+      <p class="tip">เคล็ดลับ: อย่าอ้างว่า "ดีที่สุด" โมเดลใหญ่หรือภาพละเอียดกว่าได้สูงกว่านี้ ให้เน้นว่าเราได้ผลนี้พร้อมทำ segmentation ไปด้วยในโมเดลเดียว</p>
+    </div></details>
+
+    <details><summary>ทำไม mIoU (0.827) ต่ำกว่า Dice (0.899) ตัวไหนถูก</summary><div class="a">
+      <p>ถูกทั้งคู่ วัดสิ่งเดียวกันด้วยสูตรต่างกัน \(\text{Dice} = \dfrac{2\,\text{IoU}}{1+\text{IoU}}\) จึงสูงกว่า IoU เสมอเมื่อไม่ทับกันสนิท เช่น IoU ขอบ 0.637 แปลงเป็น Dice ได้ 0.778</p>
+      <p>งาน segmentation ทั่วไปนิยม IoU ส่วนงานภาพทางการแพทย์นิยม Dice เราจึงรายงานทั้งสองค่า</p>
+    </div></details>
+
+    <details><summary>Cls-focused จำแนกสายพันธุ์ได้ดีกว่า Balanced บน test ทำไมไม่เลือกแบบนั้น</summary><div class="a">
+      <p>เพราะเกณฑ์เลือกโมเดลที่กำหนดไว้ก่อนคือคะแนน (mIoU + Breed F1) ÷ 2 บน <b>Val</b> และ Balanced ได้สูงสุด (0.8863 เทียบกับ Cls-focused 0.8842 และ Seg-focused 0.8832) ถ้าเปลี่ยนไปเลือกแบบที่ test ดีกว่า เท่ากับใช้ข้อสอบจริงตัดสินซึ่งเป็น data leakage แบบหนึ่ง</p>
+      <p>ตัวเลข test ใช้รายงาน trade-off: Cls-focused ทายสายพันธุ์ถูกมากกว่า 1.4 จุด (ราว 52 ภาพ, McNemar \(p < 0.001\)) แต่ mIoU ต่ำกว่า 0.004 ส่วนสาเหตุหลักน่าจะเป็นเพราะ checkpoint ของ Cls-focused มาจาก epoch 27 ที่เทรนจนลู่เข้าแล้ว ขณะที่ Balanced มาจาก epoch 10</p>
+      <p class="tip">เคล็ดลับ: ความไม่สอดคล้องระหว่าง Val กับ Test (บน Val Seg-focused มี mIoU สูงสุด แต่บน Test ต่ำสุดอันดับสอง) เป็นหลักฐานว่า Val 736 ภาพเล็กเกินไปสำหรับความต่างระดับนี้ พูดเรื่องนี้เป็นข้อจำกัดได้เลย</p>
+    </div></details>
+
+    <details><summary>โมเดลสับสนสายพันธุ์ไหนมากที่สุด และเพราะอะไร</summary><div class="a">
+      <p>อันดับ 1 คือ American Pit Bull Terrier → Staffordshire Bull Terrier 29 ภาพ (และกลับด้านอีก 13) สองสายพันธุ์นี้ต่างกันหลัก ๆ ที่ขนาดตัวและสัดส่วน ซึ่งดูจากภาพเดี่ยวที่ไม่มีวัตถุอ้างอิงขนาดได้ยาก ตามด้วย Egyptian Mau → Bengal (แมวลายจุดทั้งคู่) และ Ragdoll → Birman (แมวขนยาวแต้มสีตาฟ้า)</p>
+      <p>ข้อผิดพลาดส่วนใหญ่จึงเป็นคู่ที่คนทั่วไปก็แยกยาก ไม่ใช่โมเดลมองผิดจุด ดูลักษณะเด่นของแต่ละสายพันธุ์ได้ที่หน้า <a href="data.html">ทำความรู้จักข้อมูล</a></p>
+    </div></details>
+
+    <details><summary>ถ้าใส่ภาพที่ไม่ใช่หมาหรือแมว หรือสายพันธุ์ที่ไม่มีในชุดข้อมูล จะเกิดอะไรขึ้น</summary><div class="a">
+      <p>โมเดลจะตอบ 1 ใน 37 สายพันธุ์เสมอ เพราะเป็น closed-set classification เช่นภาพหมาอากิตะถูกทายเป็นชิบะด้วยความมั่นใจ 97.6% แสดงว่าความมั่นใจสูงไม่ได้แปลว่าถูก</p>
+      <p>ทางแก้คือการตรวจจับภาพนอกคลาส (out-of-distribution detection) เช่นตั้ง threshold ความมั่นใจ หรือเพิ่มคลาส "อื่น ๆ"</p>
+    </div></details>
+
+    <details><summary>ข้อจำกัดใหญ่ที่สุดของงานนี้คืออะไร</summary><div class="a">
+      <ul>
+        <li>ไม่มี single-task baseline จึงพิสูจน์ไม่ได้ว่า Multi-task ช่วยให้แม่นขึ้น</li>
+        <li>เทรนแต่ละรูปแบบครั้งเดียว ความต่างเล็ก ๆ ระหว่างรูปแบบอาจเป็นความบังเอิญ</li>
+        <li>ภาพถูกย่อเหลือ 224×224 และบีบให้เป็นสี่เหลี่ยมจัตุรัส รายละเอียดขอบหายไป และวัด IoU ที่ความละเอียดนี้ ไม่ใช่ความละเอียดเดิม</li>
+        <li>Closed-set: ตอบได้แค่ 37 สายพันธุ์ และภาพที่ทายผิดยังมีความมั่นใจเฉลี่ยถึง 71% (ภาพที่ทายถูก 93%)</li>
+      </ul>
+      <p class="tip">เคล็ดลับ: การบอกข้อจำกัดเองก่อนถูกถามเป็นส่วนหนึ่งของคะแนน "วิเคราะห์ผลและข้อจำกัด"</p>
+    </div></details>
+
+    <div class="qa-group" id="qa-use">การนำไปใช้และวิชานี้</div>
+
+    <details><summary>งานภาพสัตว์เลี้ยงเกี่ยวกับภาพทางการแพทย์อย่างไร</summary><div class="a">
+      <p>โครงสร้างเดียวกันใช้กับภาพทางการแพทย์ได้ตรง ๆ เช่น segment ก้อนเนื้อพร้อมจำแนกชนิด หรือ segment ปอดพร้อมคัดกรองโรค U-Net ก็ถูกออกแบบมาเพื่อภาพทางการแพทย์ตั้งแต่ต้น</p>
+      <p>สิ่งที่ต้องปรับคือ ภาพแพทย์มักเป็นขาวดำหรือ 3 มิติ ขณะที่ backbone ImageNet รับ RGB 3 ช่อง และโดเมนต่างจาก ImageNet มาก DLMed-08 จึงแนะนำ fine-tuning มากกว่า feature extraction สำหรับงานแพทย์</p>
+    </div></details>
+
+    <details><summary>โมเดลเร็วแค่ไหน ใช้งานจริงได้ไหม</summary><div class="a">
+      <p>วัดบนโน้ตบุ๊ก (CPU, PyTorch fp32, ทีละภาพ) ได้ราว <b>160 ms ต่อภาพ</b> สำหรับทั้ง 3 งานพร้อมกัน และบนเบราว์เซอร์ด้วย WebGPU ราว 0.4 วินาที ส่วน WASM ราว 1.6 วินาที ประเมิน test ทั้ง 3,669 ภาพบน CPU ใช้ราว 11 นาที</p>
+      <p>เพราะ encoder รันครั้งเดียวแล้วแชร์ให้ทั้ง 3 งาน จึงเร็วกว่ารัน 3 โมเดลแยกกัน ขนาดไฟล์โมเดลสำหรับใช้งาน (ONNX) ราว 186 MB</p>
+    </div></details>
+
+    <details><summary>ใครทำส่วนไหน (เตรียมตอบรายคน)</summary><div class="a">
+      <p>เกณฑ์การนำเสนอระดับดีมากต้องให้สมาชิกอธิบายส่วนที่ตัวเองรับผิดชอบได้ แนะนำให้แบ่งผู้ตอบตามหัวข้อ:</p>
+      <ul>
+        <li>ข้อมูลและการแบ่ง: <code>data/dataset.py</code></li>
+        <li>สถาปัตยกรรม: <code>models/</code></li>
+        <li>Loss และการเทรน: <code>utils/losses.py</code>, <code>train.py</code></li>
+        <li>ประเมินผลและวิเคราะห์: <code>evaluate.py</code>, <code>utils/metrics.py</code>, notebook</li>
+        <li>สาธิต: หน้า <a href="inference.html">ทดลองโมเดล</a> หรือ <code>inference.py</code></li>
+      </ul>
+    </div></details>
+  </div>
+</section>
+
+<footer>ตัวเลขในหน้านี้มาจากการรัน checkpoint <code>best_model_resnet50.pth</code> บน test ทางการ 3,669 ภาพ (ดู <code>docs/REVIEW.md</code>)</footer>
+
+</main>
+</div>
+
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.9/dist/contrib/auto-render.min.js"></script>
+<script src="assets/math.js"></script>
+<script>
+document.getElementById("openAll").addEventListener("click", function () { document.querySelectorAll(".qa details").forEach(function (d) { d.open = true; }); });
+document.getElementById("closeAll").addEventListener("click", function () { document.querySelectorAll(".qa details").forEach(function (d) { d.open = false; }); });
+// Open the question a link points to, e.g. qa.html#qa-train
+if (location.hash) { var t = document.querySelector(location.hash); if (t && t.tagName === "DETAILS") t.open = true; }
+</script>
+</body>
+</html>
