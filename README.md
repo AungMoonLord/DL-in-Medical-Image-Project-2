@@ -153,7 +153,9 @@ oxford_pet_multitask/
 │
 ├── docs/
 │   ├── Project 2 Instruction.pdf # โจทย์และเกณฑ์การให้คะแนน (มีฉบับ .png)
-│   └── REVIEW.md                 # ผลตรวจทาน checkpoint และการเทียบกับเกณฑ์
+│   └── 625b755/                  # ผลตรวจทานรอบ commit 625b755
+│       ├── REVIEW.md             # ผลตรวจทาน checkpoint และการเทียบกับเกณฑ์
+│       └── DLMed-Project2-QA.pdf # บันทึกถาม-ตอบระหว่างการตรวจทาน
 │
 ├── examples/                     # ตัวอย่างผลลัพธ์ที่รันแล้ว (เก็บเป็น .zip)
 │   ├── outputs.zip               # ภาพทั้งหมดใน outputs/ จาก evaluate.py และ notebook
@@ -304,7 +306,7 @@ python train.py --w_seg 0.5 --w_breed 2.0
 
 > ไฟล์น้ำหนักทั้งหมดจะถูกบันทึกไว้ในโฟลเดอร์ `checkpoints/`
 
-**ผลของทั้ง 3 รูปแบบ** (ตรวจซ้ำจาก checkpoint จริงบนภาพชุดเดียวกัน · รายละเอียดและการทดสอบนัยสำคัญใน [`docs/REVIEW.md`](docs/REVIEW.md)):
+**ผลของทั้ง 3 รูปแบบ** (ตรวจซ้ำจาก checkpoint จริงบนภาพชุดเดียวกัน · รายละเอียดและการทดสอบนัยสำคัญใน [`docs/625b755/REVIEW.md`](docs/625b755/REVIEW.md)):
 
 | รูปแบบ | epoch ที่เลือก | Val (mIoU + F1) ÷ 2 | Test mIoU | Test Breed Acc | Test Species Acc |
 |---|:---:|:---:|:---:|:---:|:---:|
@@ -450,7 +452,7 @@ sequenceDiagram
 
 ## ✅ ผลการตรวจทานงาน
 
-ตรวจ `best_model_resnet50.pth` และรันประเมินซ้ำบน Val และ Test (รายละเอียดใน [`docs/REVIEW.md`](docs/REVIEW.md))
+ตรวจ `best_model_resnet50.pth` และรันประเมินซ้ำบน Val และ Test (รายละเอียดใน [`docs/625b755/REVIEW.md`](docs/625b755/REVIEW.md))
 
 ```mermaid
 flowchart LR
@@ -476,7 +478,7 @@ flowchart LR
 
 - ประเมินทั้ง 3 รูปแบบบนภาพ Val และ Test ชุดเดียวกัน พร้อมทดสอบแบบจับคู่ (McNemar สำหรับ Breed, bootstrap 95% CI สำหรับ mIoU)
 - พบว่าตัวเลข 2 รูปแบบในเซลล์ที่ 6 ของ notebook ไม่ตรงกับ checkpoint และข้อสรุป "เน้นงานไหน งานนั้นดีขึ้น" ไม่เป็นจริงกับไฟล์ชุดนี้
-- อัปเดต `docs/REVIEW.md`, ตาราง λ ใน `web/components.html`, คำตอบใน `web/qa.html` และตารางผลด้านบน
+- อัปเดต `docs/625b755/REVIEW.md`, ตาราง λ ใน `web/components.html`, คำตอบใน `web/qa.html` และตารางผลด้านบน
 
 ### 2026-10-16 (รอบ 2) · ปรับเอกสารเว็บตามความเห็น
 
@@ -494,7 +496,7 @@ flowchart LR
 - **เพิ่ม `web/data.html`** — ทำความรู้จักข้อมูลและลักษณะเด่นของ 37 สายพันธุ์ พร้อมผลรายสายพันธุ์
 - **เพิ่ม `web/components.html`** — เหตุผลของแต่ละองค์ประกอบเทียบกับเอกสาร DLMed-08/10/12 และอธิบาย "จุดเด่น" ทั้ง 6 ข้อ
 - **เพิ่ม `web/inference.html` + `export_onnx.py`** — ทดลองโมเดลบนเบราว์เซอร์ โหมด Inference และ Evaluation
-- **เพิ่ม `docs/REVIEW.md`** — ผลตรวจ checkpoint, รันประเมินซ้ำ และเทียบกับเกณฑ์การให้คะแนน
+- **เพิ่ม `docs/625b755/REVIEW.md`** — ผลตรวจ checkpoint, รันประเมินซ้ำ และเทียบกับเกณฑ์การให้คะแนน
 - **ปรับ README** — แผนภาพเป็น Mermaid, โครงสร้างโปรเจกต์ใหม่, แก้ badge Albumentations เป็น torchvision (โค้ดใช้ `torchvision.transforms`), แก้ตัวอย่างคำสั่ง inference ที่อ้างถึงโฟลเดอร์ที่ไม่มีแล้ว
 
 ---
